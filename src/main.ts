@@ -1,4 +1,5 @@
-import {act, advance, createState, hasPendingDecision, markets, missionCost, missionWeeks, parseSave, players,
+import {battingLine, calendar, domesticPlayer, domesticTeams, koreaSeason, type Tier} from "./korea.js";
+import {act, advance, createState, currentProfile, followUpCost, introId, hasPendingDecision, markets, missionCost, missionWeeks, parseSave, players,
   type Command, type Market, type Player, type State} from "./game.js";
 import {clubs, freeAgentId, playerAgrees, type ClubId} from "./club-deals.js";
 
@@ -8,6 +9,8 @@ type Tab = "office" | "players" | "scout" | "market" | "deals";
 let state = createState();
 let tab:Tab = "office";
 let market:Market = "한국";
+let marketView:Market = "한국";
+let marketTier:Tier = "1군";
 let reportId:string | null = null;
 let notice = "";
 let error = "";
@@ -16,6 +19,7 @@ let started = false;
 let hasSave = false;
 let recovery = false;
 let showHistory = false;
+let showCalendar = false;
 let noticeTimer:number | undefined;
 try {
   const saved = localStorage.getItem(saveKey);
@@ -47,18 +51,45 @@ function currentPlayerLine(player:Player):string {
 function portrait(player:Player, style:string):string {
   return `<span class="${style} portrait-photo ${escape(player.id)}" aria-hidden="true"></span>`;
 }
-function playerCard(player:Player, label:string):string {
+function playerCard(original:Player, label:string):string {
+  const player=currentProfile(state,original);
   return `${portrait(player,"pass-photo")}<span class="pass-data"><small>${label} · ${escape(player.market)}</small>
     <strong>${escape(player.name)}</strong>${currentPlayerLine(player)}<span class="pass-record">${escape(player.line)}</span></span>`;
 }
+function reportName(item:{id:string,playerId?:string, market:Market}):string {
+  if (item.id===introId) return "서도윤 소개서";
+  return item.playerId ? players.find(p=>p.id===item.playerId)!.name+" 추가 조사" : item.market+" 스카우트 보고서";
+}
+function upcoming():string {
+  const entries:{week:number;label:string}[]=[];
+  for (const m of state.missions) entries.push({week:m.due,label:(m.playerId?reportName(m):m.market+" 파견")+" 복귀"});
+  for (const m of state.meetings) entries.push({week:m.due,label:players.find(p=>p.id===m.playerId)!.name+" 면담 답변"});
+  for (const m of state.matters) if (!m.done) entries.push({week:m.due,label:m.title+" 마감"});
+  for (const offer of state.clubDeals.offers) {
+    const club=clubs[offer.clubId].name;
+    if (offer.status==="waiting" || offer.status==="counter") entries.push({week:offer.replyWeek,label:club+" 협상 회신"});
+    if (offer.status==="open" || offer.status==="counter") entries.push({week:offer.deadline,label:club+" 제안 마감"});
+  }
+  const contract=state.clubDeals.contract;
+  if (contract?.status==="pending") entries.push({week:contract.registrationWeek,label:clubs[contract.clubId].name+" 등록 · 수수료 입금"});
+  const promotion=state.domestic.promotionWeek;
+  if (promotion && promotion>state.week) entries.push({week:promotion,label:"서도윤 1군 등록"});
+  for(let week=state.week+1;week<=state.week+4;week++){
+    const season=calendar(week);
+    if (season.phase!==calendar(week-1).phase) entries.push({week,label:"국내 "+season.phase+" 시작"});
+  }
+  const visible=entries.filter(item=>item.week>=state.week && item.week<=state.week+4).sort((a,b)=>a.week-b.week);
+  return `<details id="calendar" ${showCalendar?"open":""}><summary>다가오는 4주 일정 · ${visible.length}건</summary>
+    ${visible.map(item=>`<p><b>${date(item.week)}</b> ${escape(item.label)}</p>`).join("") || "<p>예정된 업무가 없습니다.</p>"}</details>`;
+}
 function office():string {
   const pending = state.matters.filter(item=>!item.done).sort((a,b)=>a.due-b.due);
-  const arrived = state.reports.filter(report=>report.week===state.week);
+  const arrived = state.reports.filter(report=>report.week===state.week && report.id!==introId);
   const mission = state.missions[0];
   const openOffers=state.clubDeals.offers.filter(offer=>offer.status==="open").length;
   const featured=players.find(player=>state.clients.includes(player.id));
   return `<section class="office-title" aria-label="사무실">
-      <p class="week-strip">${weekDate(state.week).getUTCFullYear()} 시즌</p><h1>${state.week}<small>주차</small></h1>
+      <p class="week-strip">${weekDate(state.week).getUTCFullYear()} · 국내 ${calendar(state.week).phase}</p><h1>${state.week}<small>주차</small></h1>
       <p class="hero-date">${date(state.week)} 월요일</p></section>
     <section class="agenda"><div class="section-title"><h2>이번 주 업무</h2></div>
       ${pending.map(item=>`<article class="matter"><p class="deadline">${item.due===state.week?"이번 주 마감":(item.due-state.week)+"주 뒤 마감"}</p>
@@ -66,19 +97,21 @@ function office():string {
         <div class="actions">${button("고객 계약","sign",`data-id="${item.id}"`,false,"primary")}
         ${button("거절","decline",`data-id="${item.id}"`,false,"quiet")}</div></article>`).join("")}
       ${openOffers ? button(`구단 제안 ${openOffers}건 비교`,"tab",'data-tab="deals"',false,"primary full") : ""}
-      ${arrived.map(report=>button(`<span><b>${report.market} 스카우트 보고서</b><small>후보 ${report.candidates.length}명 · 이번 주 도착</small></span><span>열기 ›</span>`,
+      ${arrived.map(report=>button(`<span><b>${reportName(report)}</b><small>후보 ${report.candidates.length}명 · 이번 주 도착</small></span><span>열기 ›</span>`,
         "report",`data-id="${report.id}"`,false,"office-action")).join("")}
-      ${pending.length || openOffers || arrived.length ? "" : button(`<span><b>${mission ? mission.market+" 조사 중" : "스카우트 파견"}</b>
+      ${pending.length || openOffers || arrived.length ? "" : button(`<span><b>${mission ? (mission.playerId ? reportName(mission) : mission.market+" 조사")+" 중" : "스카우트 파견"}</b>
         <small>${mission ? date(mission.due)+" 복귀 예정" : "국내외에서 새 선수를 발굴하세요."}</small></span><span>${mission ? "현황" : "지역 선택"} ›</span>`,"tab",'data-tab="scout"',false,"office-action")}
       ${state.meetings.map(item=>`<p class="task-line">${escape(players.find(player=>player.id===item.playerId)!.name)} 면담 답변 · ${date(item.due)} 예정</p>`).join("")}
     </section>
-    <section class="roster-desk"><div class="section-title"><h2>담당 선수</h2>${button(`선수 명단 ${state.clients.length}/3 ›`,"tab",'data-tab="players"',false,"section-link")}</div>
+    <section class="roster-desk"><div class="section-title"><h2>${!featured && state.week===1 ? "소개받은 선수" : "담당 선수"}</h2>${button(`선수 명단 ${state.clients.length}/3 ›`,"tab",'data-tab="players"',false,"section-link")}</div>
       ${featured ? button(playerCard(featured,"담당 고객"),"tab",'data-tab="players"',false,"player-pass") :
+        state.week===1 ? button(playerCard(players.find(p=>p.id===domesticPlayer)!,"소개서 열기"),"introduction","",false,"player-pass") :
         `<p class="empty">보고서에서 선수를 만나 첫 고객 계약을 맺으세요.</p>`}
     </section>
-    <section><div class="section-title"><h2>이번 주 소식</h2></div>
+    <section><div class="section-title"><h2>이번 주 소식</h2>${button("국내 경기 기록 ›","league","",false,"section-link")}</div>
       <p class="weekly-note">${escape(state.summaries[0]?.text ?? "")}</p>
     </section>
+    ${upcoming()}
     <details ${showHistory?"open":""} id="history"><summary>지난 주 업무 기록</summary>
       ${state.summaries.slice(1).map(item=>`<p><b>${item.week}주차</b> ${escape(item.text)}</p>`).join("") ||
         "<p>첫 주의 업무 기록이 여기에 쌓입니다.</p>"}</details>`;
@@ -86,24 +119,26 @@ function office():string {
 function scout():string {
   const running = state.missions[0];
   const selected = running?.market ?? market;
+  const cost=running?.playerId ? followUpCost : missionCost(selected);
   return `<header class="page-title"><h1>스카우트</h1></header>
     <section class="dispatch"><h2>${running ? "파견 현황" : "조사 지역"}</h2>
       <div class="regions" role="group" aria-label="조사 지역">${markets.map(item=>button(item,"region",
         `data-market="${item}" aria-pressed="${selected===item}"`,!!running,selected===item?"chosen":"")).join("")}</div>
-      <dl class="route-terms"><div><dt>조사 비용</dt><dd>${money(missionCost(selected))}</dd></div>
+      <dl class="route-terms"><div><dt>조사 비용</dt><dd>${money(cost)}</dd></div>
       <div><dt>${running?"복귀 예정":"예상 기간"}</dt><dd>${running?date(running.due):missionWeeks(selected)+"주"}</dd></div></dl>
-      ${running ? `<p class="route-state">${running.market} 조사 중 · 복귀까지 ${running.due-state.week}주</p>` :
+      ${running ? `<p class="route-state">${running.playerId ? reportName(running) : running.market+" 조사"} 중 · 복귀까지 ${running.due-state.week}주</p>` :
         button(state.money<missionCost(selected)?"파견 비용 부족":selected+" 스카우트 파견","dispatch","",state.money<missionCost(selected),"primary full")}
     </section>
     <section><div class="section-title"><h2>도착한 보고서</h2><span>${state.reports.length}건</span></div>
       ${state.reports.slice().reverse().map(report=>button(
-        `${report.candidates[0] ? portrait(report.candidates[0].player,"report-thumb") : ""}<span class="report-copy"><small>${date(report.week)} · 관찰 기록</small><b>${report.market} 스카우트 보고서</b><small>후보 ${report.candidates.length}명 · ${report.page+1}장부터 이어 읽기</small></span><span aria-hidden="true">↗</span>`,
+        `${report.candidates[0] ? portrait(report.candidates[0].player,"report-thumb") : ""}<span class="report-copy"><small>${date(report.week)} · 관찰 기록</small><b>${reportName(report)}</b><small>후보 ${report.candidates.length}명 · ${report.page+1}장부터 이어 읽기</small></span><span aria-hidden="true">↗</span>`,
         "report",`data-id="${report.id}"`,false,"report-row")).join("") ||
         '<p class="empty">첫 파견이 끝나면 조사 당시의 기록과 의견을 보관합니다.</p>'}
     </section>`;
 }
 function myPlayers():string {
-  const selected = players.filter(player=>state.clients.includes(player.id) || state.interests.includes(player.id));
+  const selected = players.filter(player=>state.clients.includes(player.id) || state.interests.includes(player.id))
+    .sort((a,b)=>Number(state.clients.includes(b.id))-Number(state.clients.includes(a.id)));
   return `<header class="page-title"><h1>내 선수</h1><p>고객 ${state.clients.length}명 · 관심 선수 ${state.interests.length}명</p></header>
     ${selected.map(player=>{
       const client=state.clients.includes(player.id);
@@ -111,17 +146,35 @@ function myPlayers():string {
       return `<article class="roster-entry"><div class="player-pass">${playerCard(player,client?"담당 고객":"관심 선수")}</div>
         <div class="contract-strip">${client ? "<span>계약 2년 · 수수료 5%</span>" : ""}
           ${latest ? button("관찰 기록 열기","report",`data-id="${latest.id}" data-player="${player.id}"`,false,"section-link") : ""}
+          ${!client && state.interests.includes(player.id) ? button("관심 해제","unwatch",`data-id="${player.id}"`,false,"section-link") : ""}
           ${client && player.id===freeAgentId ? button("구단 협상","tab",'data-tab="deals"',false,"section-link") : ""}</div></article>`;
     }).join("") ||
       `<section class="empty"><h2>첫 인연을 기다립니다.</h2><p>스카우트 보고서에서 관심 등록이나 면담을 요청하세요.</p>
       ${button("스카우트로 이동","tab",'data-tab="scout"',false,"primary")}</section>`}`;
 }
 function marketPage():string {
-  return `<header class="page-title"><h1>시장</h1><p>가상 선수와 소속 현황</p></header>
-    ${markets.map(item=>`<section class="market-section"><div class="section-title"><h2>${item}</h2><span>${item==="미국"?"마이너":"현지 관찰"}</span></div>
-      ${players.filter(player=>player.market===item).map(player=>`<article class="market-player">${portrait(player,"portrait")}
-        <div><h3>${player.name}</h3>${currentPlayerLine(player)}<p class="record">${player.line}</p></div></article>`).join("")}</section>`).join("")}
-    `;
+  const season=calendar(state.week);
+  const roster=players.filter(player=>player.market===marketView);
+  const league=marketView==="한국" ? koreaSeason(state.seed,state.week,state.domestic,marketTier) : null;
+  const latest=league?.games.at(-1);
+  return `<header class="page-title"><h1>시장</h1></header>
+    <div class="regions" role="group" aria-label="시장 선택">${markets.map(region=>button(region,"market-view",
+      `data-market="${region}" aria-pressed="${marketView===region}"`,false,marketView===region?"chosen":"")).join("")}</div>
+    ${league ? `<section class="league-board"><header><h2>국내 리그</h2><span>${season.season}시즌 · ${season.phase}</span></header>
+      <div class="tier-switch" role="group" aria-label="국내 리그 구분">${(["1군","2군"] as const).map(t=>button(t,"tier",
+        `data-id="${t}" aria-pressed="${marketTier===t}"`,false,marketTier===t?"chosen":"")).join("")}</div>
+      ${latest ? `<p class="score-date">${date(latest.week)} 경기 결과</p>
+        <div class="score-line"><span>${domesticTeams[0]}</span><b>${latest.runs[0]} : ${latest.runs[1]}</b><span>${domesticTeams[1]}</span></div>`
+        : `<p class="score-date">${season.round<4 ? "정규시즌 개막 · "+date(state.week+4-season.round) : "이번 시즌 집계된 경기가 없습니다."}</p>`}
+      <table><caption>팀 순위</caption><thead><tr><th>순위</th><th>구단</th><th>승</th><th>무</th><th>패</th></tr></thead>
+      <tbody>${[0,1].sort((a,b)=>league.wins[b]-league.wins[a]).map((team,i)=>`<tr><td>${league.games.length ? league.wins[0]===league.wins[1] ? 1 : i+1 : "—"}</td><th scope="row">${domesticTeams[team]}</th><td>${league.wins[team]}</td><td>${league.draws}</td><td>${league.wins[1-team]}</td></tr>`).join("")}</tbody></table>
+      ${league.batting.pa ? `<p class="league-batter">서도윤 · ${marketTier} ${battingLine(league.batting)}</p>` : ""}
+      </section>` : ""}
+    <section><div class="section-title"><h2>${marketView} 선수</h2></div>
+      ${roster.map(original=>{const player=currentProfile(state,original);return `<article class="market-player">${portrait(player,"portrait")}
+        <div><h3>${player.name}</h3>${currentPlayerLine(player)}<p class="record">${player.line}</p></div></article>`;}).join("")}
+      ${button(marketView+" 파견 현황","tab",`data-tab="scout" data-market="${marketView}"`,false,"secondary full")}
+    </section>`;
 }
 function dealsPage():string {
   const {offers,contract}=state.clubDeals;
@@ -169,19 +222,23 @@ function report():string {
   if (!item) {reportId = null; return "";}
   const candidate = item.candidates[item.page];
   const player = candidate?.player;
+  const refined=player && state.reports.some(r=>r.playerId===player.id);
+  const investigating=player && state.missions.some(m=>m.playerId===player.id);
   const requested = player && (state.meetings.some(meeting=>meeting.playerId===player.id) ||
     state.matters.some(matter=>matter.playerId===player.id && !matter.done));
   return `<div class="report-view"><header class="report-top">${button(tab==="scout"?"스카우트로":tab==="players"?"선수 명단으로":"사무실로","close","",false,"quiet")}
-    <span>${item.market} 조사 · ${date(item.week)}</span><span>${item.page+1} / ${Math.max(1,item.candidates.length)}</span></header>
+    <span>${item.id===introId ? "선수 소개" : item.playerId ? "추가 조사" : item.market+" 조사"} · ${date(item.week)}</span><span>${item.page+1} / ${Math.max(1,item.candidates.length)}</span></header>
     <article class="paper" aria-label="스카우트 보고서" id="paper" tabindex="-1">
       ${player ? `<div class="player-hero">${portrait(player,"hero-portrait")}
         <div class="player-name"><p>${escape(player.position)}</p><h1>${escape(player.name)}</h1>${playerLine(player)}</div></div>
-        <div class="report-body"><section><h2>관찰 기록</h2><p class="record">${escape(player.line)}</p><p class="small">관찰 기간 4주 · 출전량 ${player.appearances}${player.position.includes("투수")?"아웃":"타석"}</p>
-          <dl class="estimate"><div><dt>현재 실력 추정</dt><dd>${Math.max(1,player.ability-4)}–${player.ability+4}</dd></div>
+        <div class="report-body"><section><h2>관찰 기록</h2><p class="record">${escape(player.line)}</p><p class="small">${player.id===domesticPlayer && (player.line.includes("타율") || player.appearances===0)?"해당 시즌 누적":"조사 당시 기록"} · 출전량 ${player.appearances}${player.position.includes("투수")?"아웃":"타석"}</p>
+          <dl class="estimate"><div><dt>현재 실력 추정</dt><dd>${Math.max(1,player.ability-(item.playerId?2:4))}–${player.ability+(item.playerId?2:4)}</dd></div>
           <div><dt>잠재력 추정</dt><dd>${candidate.low}–${candidate.high}</dd></div></dl>
           </section>
         <section class="scout-opinion"><h2>스카우트 의견</h2><p>${escape(player.opinion)}</p></section>
-        <div class="report-actions">${button(state.interests.includes(player.id)?"관심 등록됨":"관심 등록","interest",`data-id="${player.id}"`,state.interests.includes(player.id),"secondary")}
+        <div class="follow-up">${button(refined?"추가 조사 완료":investigating?"추가 조사 중":state.missions.length?"스카우트 복귀 후 추가 조사":state.money<followUpCost?"추가 조사 비용 부족":"추가 조사 · 1주 / 30만 원","follow-up",`data-id="${player.id}"`,
+          !!refined || !!state.missions.length || state.money<followUpCost,"secondary full")}</div>
+        <div class="report-actions">${button(state.interests.includes(player.id)?"관심 해제":"관심 등록",state.interests.includes(player.id)?"unwatch":"interest",`data-id="${player.id}"`,false,"secondary")}
         ${button(state.clients.includes(player.id)?"담당 고객":requested?"면담 답변 대기":"면담 요청","meeting",`data-id="${player.id}"`,
           !!requested || state.clients.includes(player.id),"primary")}</div></div>` :
         `<div class="report-body empty-report"><h1>후보 없음</h1><p class="weekly-note">관찰 기간 동안 추천할 만한 후보를 찾지 못했습니다.</p></div>`}
@@ -236,6 +293,7 @@ root.addEventListener("submit", event=>{
   } catch {error="저장 공간에 쓸 수 없습니다. 기기의 저장 공간과 앱 권한을 확인하세요."; render();}
 });
 root.addEventListener("toggle",event=>{
+  if ((event.target as HTMLElement).id==="calendar") showCalendar=(event.target as HTMLDetailsElement).open;
   if ((event.target as HTMLElement).id==="history") showHistory=(event.target as HTMLDetailsElement).open;
 },true);
 root.addEventListener("click",async event=>{
@@ -264,8 +322,14 @@ root.addEventListener("click",async event=>{
         break;
       }
       case "close": reportId=null; break;
+      case "introduction": await execute({type:"introduction"}); reportId=introId; break;
+      case "league": tab="market"; marketView="한국"; break;
       case "region": market=target.dataset.market as Market; break;
+      case "market-view": marketView=target.dataset.market as Market; break;
+      case "tier": marketTier=id as Tier; break;
+      case "follow-up": await execute({type:"follow-up",playerId:id}); notice="추가 조사를 보냈습니다. 다음 주에 보고서가 도착합니다."; break;
       case "dispatch": await execute({type:"dispatch",market}); notice="파견을 저장했습니다."; break;
+      case "unwatch": await execute({type:"unwatch",playerId:id}); notice="관심 명단에서 제외했습니다."; break;
       case "interest": await execute({type:"interest",playerId:id}); notice="관심 선수로 등록했습니다."; break;
       case "meeting": await execute({type:"meeting",playerId:id}); notice="면담을 요청했습니다. 다음 주에 답변이 도착합니다."; break;
       case "sign": await execute({type:"sign",matterId:id}); notice="새 고객 계약을 저장했습니다."; break;
@@ -305,8 +369,8 @@ root.addEventListener("click",async event=>{
   } finally {
     busy=false;
     render();
-    if (action==="region") root.querySelector<HTMLButtonElement>('.regions [aria-pressed="true"]')?.focus({preventScroll:true});
-    if (["tab","report","close","next","prev","continue","title","advance"].includes(action!)) {
+    if (["region","tier","market-view"].includes(action!)) root.querySelector<HTMLButtonElement>(`[data-action="${action}"][aria-pressed="true"]`)?.focus({preventScroll:true});
+    if (["league","introduction","tab","report","close","next","prev","continue","title","advance"].includes(action!)) {
       root.querySelector<HTMLElement>(reportId?"#paper":"#content")?.focus({preventScroll:true});
       window.scrollTo(0,0);
     }

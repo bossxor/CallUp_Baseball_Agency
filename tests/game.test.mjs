@@ -111,3 +111,64 @@ test("eligibility, occupied slots, counter limits and deadline protect the deal"
   state.clubDeals.offers[0].salary=-1;
   assert.throws(()=>parseSave(JSON.stringify(state)),/협상/);
 });
+
+
+test("first introduction and one-week follow-up preserve the original report and charge once",()=>{
+  let state=act(createState(),{type:"introduction"});
+  assert.equal(act(state,{type:"introduction"}).reports.length,1);
+  const prior=structuredClone(state.reports[0]);
+  const follow={type:"follow-up",playerId:"kr-1"};
+  assert.throws(()=>act(state,{type:"follow-up",playerId:"tw-2"}));
+  assert.throws(()=>act({...state,money:299999},follow));
+  assert.throws(()=>act(act(state,{type:"dispatch",market:"미국"}),follow));
+  state=act(state,follow);
+  assert.throws(()=>act(state,{type:"dispatch",market:"미국"}));
+  assert.equal(act(state,follow).money,14700000);
+  const next=advance(parseSave(JSON.stringify(state)),4);
+  assert.equal(next.length,1);
+  state=parseSave(JSON.stringify(next[0]));
+  assert.deepEqual(state.reports[0],prior);
+  const refined=state.reports[1].candidates[0], original=prior.candidates[0];
+  assert.ok(refined.low>original.low && refined.high<original.high);
+  assert.notEqual(refined.player.opinion,original.player.opinion);
+  assert.deepEqual(act(state,follow),state);
+  assert.equal(act(state,{type:"meeting",playerId:"kr-1"}).meetings.length,1);
+});
+
+test("Korean fixtures drive standings, batting and promotion across reloads and season boundaries",async()=>{
+  const {calendar,koreaSeason,tierAt}=await import("../dist/korea.js");
+  let state=createState();
+  state.clients.push("kr-1");
+  const start=structuredClone(state);
+  let registered=false;
+  for(let i=0;i<52;i++){
+    const last=state.week;
+    const result=step(state);
+    state=parseSave(JSON.stringify(result.state));
+    for(const tier of ["1군","2군"]){
+      const {games,wins,draws,batting}=koreaSeason(state.seed,state.week,state.domestic,tier);
+      assert.equal(wins[0]+wins[1]+draws,games.length);
+      assert.equal(wins[0],games.filter(g=>g.runs[0]>g.runs[1]).length);
+      assert.equal(batting.hits,games.reduce((sum,g)=>sum+g.batting.hits,0));
+      assert.ok(batting.bases>=batting.hits && batting.hits+batting.walks<=batting.pa);
+      for(const g of games) assert.equal(g.batting.pa>0,tier===tierAt(state.domestic,g.week));
+    }
+    if(state.domestic.promotionWeek===state.week){
+      assert.equal(result.important,true);
+      const b=koreaSeason(state.seed,last,state.domestic,"2군").batting;
+      assert.ok(b.pa-b.walks>=16 && b.hits/(b.pa-b.walks)>=.3);
+      registered=true;
+    }
+  }
+  assert.ok(registered);
+  assert.equal(calendar(state.week).season,2);
+  assert.equal(koreaSeason(state.seed,state.week,state.domestic,"1군").games.length,0);
+  let bulk=start;
+  while(bulk.week<state.week) bulk=advance(bulk,Math.min(4,state.week-bulk.week)).at(-1);
+  assert.deepEqual(bulk,state);
+  const legacy={...start,week:15};
+  delete legacy.domestic;
+  const migrated=parseSave(JSON.stringify(legacy));
+  assert.equal(koreaSeason(migrated.seed,15,migrated.domestic,"1군").games.length,0);
+  assert.equal(koreaSeason(migrated.seed,16,step(migrated).state.domestic,"1군").games.length,1);
+});

@@ -9,7 +9,7 @@ $assets = "$build/assets/public"
 if (!(Test-Path dist/main.js)) { throw 'Run npm run build first.' }
 New-Item -ItemType Directory -Force "$build/classes", "$build/res/drawable", "$assets/dist", "$assets/src/art" | Out-Null
 Copy-Item index.html "$assets/index.html"
-Copy-Item dist/game.js,dist/main.js,dist/club-deals.js "$assets/dist/"
+Copy-Item dist/game.js,dist/main.js,dist/club-deals.js,dist/korea.js "$assets/dist/"
 Copy-Item src/style.css "$assets/src/style.css"
 Copy-Item src/art/stadium.jpg,src/art/players.jpg,src/art/office.jpg "$assets/src/art/"
 @'

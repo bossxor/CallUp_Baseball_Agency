@@ -230,3 +230,19 @@ nav button.active { color:var(--accent); box-shadow:inset 0 -3px var(--accent); 
 .agenda>.primary { margin-top:8px; }
 #content>.player-pass + .contract-strip { margin-bottom:14px; }
 button:enabled:active { filter:brightness(.87); }
+
+.follow-up { margin:12px 0 8px; }
+.league-board { padding:15px; border-radius:8px; background:#173134; color:#f1f3df; }
+.league-board header,.score-line { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.league-board header span,.score-date { color:#cadbc9; font-size:.8rem; }
+.tier-switch { display:flex; margin:8px 0; gap:6px; }
+.tier-switch button { border-radius:3px; color:#d2dfce; }
+.tier-switch .chosen { border-bottom:3px solid #f6c78a; color:white; }
+.score-line { text-align:center; padding:10px 0; font-size:.88rem; }
+.score-line b { font-size:1.65rem; white-space:nowrap; color:#ffe4ad; font-variant-numeric:tabular-nums; }
+.league-board table { width:100%; text-align:center; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:.86rem; }
+.league-board caption { text-align:left; font-weight:700; padding:10px 0 4px; }
+.league-board th,.league-board td { border-top:1px solid #486261; padding:6px 3px; }
+.league-board thead { font-size:.75rem; color:#cadbc9; }
+.league-batter { margin-top:10px; color:#f2dcb4; font-size:.82rem; }
+.market-player+.secondary { margin-top:12px; }

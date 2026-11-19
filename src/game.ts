@@ -1,3 +1,4 @@
+import {battingLine, calendar, domesticTeams, domesticPlayer, koreaSeason, schedulePromotion, tierAt, type Domestic} from "./korea.js";
 import {advanceClubDeals, applyClubDeal, validateClubDeals,
   type ClubDeals, type DealCommand} from "./club-deals.js";
 
@@ -22,9 +23,18 @@ export const players: Player[] = [
   {id:"us-1",name:"마커스 리드",age:25,position:"우완 투수",market:"미국",club:"오클랜드 베이",level:"마이너",
     ability:65,potential:73,appearances:111,line:"37이닝 · 41탈삼진 · 13볼넷",opinion:"선발과 불펜을 모두 경험했습니다. 꾸준한 등판 기회와 보장 계약을 원합니다."},
 ];
-export interface Mission {id:string; market:Market; sent:number; due:number}
+const followUpNotes:Record<string,string>={
+  "kr-1":"바깥쪽 변화구에 배트가 먼저 나갑니다. 빠른 공 대처와 외야 수비가 상위 리그에서 출전할 근거입니다.",
+  "kr-2":"주자가 없을 때는 같은 높이로 직구를 반복합니다. 세트 포지션에서는 릴리스가 빨라져 공이 높아집니다.",
+  "tw-1":"깊은 타구를 잡은 뒤에도 첫 송구가 정확합니다. 높은 공을 흘려보내며 유리한 볼카운트를 만듭니다.",
+  "tw-2":"선발 등판 후반에도 좌타자 바깥쪽 제구를 유지했습니다. 우타자 상대 변화구는 높은 쪽으로 빠졌습니다.",
+  "jp-1":"낮은 변화구를 몸 앞에 떨어뜨립니다. 주자가 뛸 때 공을 빼는 동작이 길어 송구 시간을 더 줄여야 합니다.",
+  "us-1":"선발로 타순이 한 바퀴 돈 뒤에도 직구 제구를 유지했습니다. 짧은 등판에서는 변화구 선택이 단순해집니다.",
+};
+export const introId="intro-kr-1";
+export interface Mission {id:string; market:Market; sent:number; due:number; playerId?:string}
 export interface Candidate {player:Player; low:number; high:number}
-export interface Report {id:string; market:Market; week:number; page:number; candidates:Candidate[]}
+export interface Report {id:string; market:Market; week:number; page:number; candidates:Candidate[]; playerId?:string}
 export interface Matter {
   id:string; playerId:string; title:string; body:string; due:number; done:boolean;
 }
@@ -33,22 +43,26 @@ export interface State {
   version:1; seed:number; week:number; agency:string; money:number; nextId:number;
   missions:Mission[]; reports:Report[]; interests:string[]; clients:string[];
   meetings:{playerId:string; due:number}[]; matters:Matter[]; summaries:Summary[];
+  domestic:Domestic;
   clubDeals:ClubDeals;
 }
 export type Command = DealCommand
+  | {type:"introduction"}
   | {type:"dispatch"; market:Market}
-  | {type:"interest"; playerId:string}
+  | {type:"follow-up"; playerId:string}
+  | {type:"interest"|"unwatch"; playerId:string}
   | {type:"meeting"; playerId:string}
   | {type:"sign"; matterId:string}
   | {type:"decline"; matterId:string}
   | {type:"page"; reportId:string; page:number};
+export const followUpCost=300000;
 export const missionCost = (market:Market) => market === "한국" ? 500000 : 1200000;
 export const missionWeeks = (market:Market) => market === "한국" ? 2 : 3;
 
 export function createState(agency = "콜업 에이전시", seed = 20261119):State {
   return {version:1,seed,week:1,agency:agency.trim().slice(0,24) || "콜업 에이전시",
     money:15000000,nextId:1,missions:[],reports:[],interests:[],clients:[],meetings:[],matters:[],
-    clubDeals:{offers:[],contract:null},
+    domestic:{firstWeek:2,promotionWeek:null}, clubDeals:{offers:[],contract:null},
     summaries:[{week:1,text:"창업 첫 주입니다. 국내외 조사 지역을 정하고 첫 파견을 준비하세요."}]};
 }
 function requirePlayer(id:string):Player {
@@ -64,6 +78,14 @@ export function act(current:State, command:Command):State {
     case "accept-offer":
       applyClubDeal(state,command);
       break;
+    case "introduction": {
+      if (state.reports.some(r=>r.id===introId)) return current;
+      if (state.week!==1) throw new Error("창업 첫 주에 받을 수 있는 소개입니다.");
+      const player=structuredClone(requirePlayer(domesticPlayer));
+      state.reports.push({id:introId,page:0,week:1,market:player.market,
+        candidates:[{player,low:player.potential-10,high:player.potential+5}]});
+      break;
+    }
     case "dispatch":
       if (!markets.includes(command.market)) throw new Error("조사 지역을 선택하세요.");
       if (state.missions.length) throw new Error("파견 중인 스카우트가 돌아오면 다시 보낼 수 있습니다.");
@@ -71,6 +93,21 @@ export function act(current:State, command:Command):State {
       state.money -= missionCost(command.market);
       state.missions.push({id:"report-"+state.nextId++,market:command.market,sent:state.week,
         due:state.week+missionWeeks(command.market)});
+      break;
+    case "follow-up": {
+      const player=requirePlayer(command.playerId);
+      if (state.missions.some(item=>item.playerId===player.id) || state.reports.some(item=>item.playerId===player.id)) return current;
+      if (!state.reports.some(report=>report.candidates.some(candidate=>candidate.player.id===player.id)))
+        throw new Error("먼저 지역 파견에서 선수를 관찰하세요.");
+      if (state.missions.length) throw new Error("스카우트가 복귀하면 추가 조사를 보낼 수 있습니다.");
+      if (state.money<followUpCost) throw new Error("추가 조사 비용이 부족합니다.");
+      state.money-=followUpCost;
+      state.missions.push({id:"report-"+state.nextId++,market:player.market,playerId:player.id,sent:state.week,due:state.week+1});
+      break;
+    }
+    case "unwatch":
+      requirePlayer(command.playerId);
+      state.interests=state.interests.filter(id=>id!==command.playerId);
       break;
     case "interest":
       requirePlayer(command.playerId);
@@ -112,18 +149,36 @@ function draw(seed:number, week:number, salt:number):number {
   value = Math.imul(value ^ value >>> 16, 3266489917);
   return (value >>> 0) / 4294967296;
 }
+export function currentProfile(state:State, player:Player):Player {
+  if (player.id!==domesticPlayer) return player;
+  const level=tierAt(state.domestic,state.week);
+  const {batting}=koreaSeason(state.seed,state.week,state.domestic,level);
+  if (!batting.pa) return {...player,level,line:"이번 시즌 출전 전",appearances:0};
+  return {...player,level,line:battingLine(batting),appearances:batting.pa};
+}
 export function step(current:State):{state:State; important:boolean} {
   const state = structuredClone(current);
   state.week++;
   let important = false;
   const notes:string[] = [];
+  schedulePromotion(state.seed,state.week,state.domestic);
+  if (state.domestic.promotionWeek===state.week) {
+    notes.push("인천 웨이브스가 서도윤을 1군에 등록했습니다.");
+    important=state.clients.includes(domesticPlayer) || state.interests.includes(domesticPlayer);
+  }
   for (const mission of state.missions.filter(item=>item.due <= state.week)) {
-    const pool = players.filter(player=>player.market===mission.market && !state.clients.includes(player.id));
-    const candidates = pool.filter((_,index)=>draw(state.seed,state.week,index+state.nextId) > .16)
-      .map(player=>({player:structuredClone(player),low:Math.max(player.ability,player.potential-10),
-        high:Math.min(99,player.potential+5)}));
-    state.reports.push({id:mission.id,market:mission.market,week:state.week,page:0,candidates});
-    notes.push(mission.market+" 스카우트 보고서가 도착했습니다.");
+    const pool = mission.playerId ? [requirePlayer(mission.playerId)] :
+      players.filter(player=>player.market===mission.market && !state.clients.includes(player.id))
+        .filter((_,index)=>draw(state.seed,state.week,index+state.nextId) > .16);
+    const candidates=pool.map(original=>{
+      const player=currentProfile(state,original);
+      const snapshot=structuredClone(player);
+      if (mission.playerId) snapshot.opinion=followUpNotes[player.id];
+      return {player:snapshot,low:Math.max(player.ability,player.potential-(mission.playerId?3:10)),
+        high:Math.min(99,player.potential+(mission.playerId?2:5))};
+    });
+    state.reports.push({id:mission.id,market:mission.market,week:state.week,page:0,candidates,...(mission.playerId ? {playerId:mission.playerId} : {})});
+    notes.push((mission.playerId ? requirePlayer(mission.playerId).name+" 추가 조사" : mission.market+" 스카우트")+" 보고서가 도착했습니다.");
     important = true;
   }
   state.missions = state.missions.filter(item=>item.due > state.week);
@@ -142,6 +197,10 @@ export function step(current:State):{state:State; important:boolean} {
   const clubNews=advanceClubDeals(state);
   notes.push(...clubNews);
   important ||= clubNews.length>0;
+  if (calendar(state.week).phase==="정규시즌") {
+    const latest=koreaSeason(state.seed,state.week,state.domestic,"1군").games.at(-1);
+    if (latest) notes.push(`국내 1군 · ${domesticTeams[0]} ${latest.runs[0]} : ${latest.runs[1]} ${domesticTeams[1]}`);
+  }
   state.summaries.unshift({week:state.week,text:notes.join(" ") ||
     "새로 도착한 안건이 없습니다. 선수 기록과 조사 현황을 살펴보거나 다음 주로 진행하세요."});
   state.summaries = state.summaries.slice(0,52);
@@ -202,6 +261,17 @@ export function parseSave(text:string):State {
         !players.some(player=>player.id===item.playerId)) ||
       state.summaries.some(item=>!Number.isSafeInteger(item.week) || typeof item.text!=="string"))
     throw new Error("저장된 업무 이력이 손상되었습니다.");
+  if (state.domestic===undefined) state.domestic={firstWeek:state.week+1,promotionWeek:null};
+  const d=state.domestic;
+  if (!d || !Number.isSafeInteger(d.firstWeek) || d.firstWeek<1 || d.firstWeek>state.week+1 ||
+      (d.promotionWeek!==null && (!Number.isSafeInteger(d.promotionWeek) || d.promotionWeek<=d.firstWeek || d.promotionWeek>state.week+1)))
+    throw new Error("국내 리그 기록이 손상되었습니다.");
+  for (const item of [...state.missions,...state.reports]) {
+    if (item.playerId===undefined) continue;
+    if (requirePlayer(item.playerId).market!==item.market ||
+        ("candidates" in item && (item.candidates.length!==1 || item.candidates[0].player.id!==item.playerId)))
+      throw new Error("추가 조사 기록이 손상되었습니다.");
+  }
   validateClubDeals(state);
   return state;
 }
