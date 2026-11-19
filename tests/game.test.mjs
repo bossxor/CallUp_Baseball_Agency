@@ -59,3 +59,55 @@ test("quiet weeks and empty report remain usable",()=>{
   broken.clients=["missing"];
   assert.throws(()=>parseSave(JSON.stringify(broken)));
 });
+
+test("two club replies, counteroffer and registration survive reopening without duplicate fees",()=>{
+  const legacy=createState();
+  delete legacy.clubDeals;
+  legacy.clients.push("us-1");
+  let state=parseSave(JSON.stringify(legacy));
+  const recommend=clubId=>({type:"recommend",clubId,playerId:"us-1"});
+  state=act(state,recommend("tainan"));
+  state=act(state,recommend("tainan"));
+  state=act(state,recommend("nagoya"));
+  assert.equal(state.clubDeals.offers.length,2);
+  let weeks=advance(state,4);
+  assert.equal(weeks.length,1);
+  state=weeks[0];
+  const taiwan=state.clubDeals.offers.find(item=>item.clubId==="tainan");
+  assert.equal(taiwan.status,"open");
+  state=act(state,{type:"counter",offerId:taiwan.id,salary:176000000});
+  state=step(parseSave(JSON.stringify(state))).state;
+  const japan=state.clubDeals.offers.find(item=>item.clubId==="nagoya");
+  assert.equal(japan.status,"open");
+  assert.equal(state.clubDeals.offers[0].salary,176000000);
+  assert.throws(()=>act(state,{type:"accept-offer",offerId:japan.id}),/선수/);
+  const money=state.money;
+  state=act(state,{type:"accept-offer",offerId:taiwan.id});
+  assert.equal(state.clubDeals.offers[1].status,"closed");
+  assert.equal(state.clubDeals.contract.status,"pending");
+  assert.equal(state.money,money);
+  state=step(parseSave(JSON.stringify(state))).state;
+  assert.equal(state.clubDeals.contract.status,"registered");
+  assert.equal(state.money,money+8800000);
+  state=act(state,{type:"accept-offer",offerId:taiwan.id});
+  assert.equal(step(parseSave(JSON.stringify(state))).state.money,money+8800000);
+});
+
+test("eligibility, occupied slots, counter limits and deadline protect the deal",()=>{
+  const fresh=createState();
+  assert.throws(()=>act(fresh,{type:"recommend",clubId:"tainan",playerId:"us-1"}),/고객/);
+  fresh.clients.push("us-1","kr-1");
+  assert.throws(()=>act(fresh,{type:"recommend",clubId:"tainan",playerId:"kr-1"}),/자유계약/);
+  assert.throws(()=>act(fresh,{type:"recommend",clubId:"taichung",playerId:"us-1"}),/자리/);
+  let state=step(act(fresh,{type:"recommend",clubId:"tainan",playerId:"us-1"})).state;
+  const offerId=state.clubDeals.offers[0].id;
+  assert.throws(()=>act(state,{type:"counter",offerId,salary:Number.NaN}),/연봉/);
+  state=act(state,{type:"counter",offerId,salary:300000000});
+  state=step(state).state;
+  assert.equal(state.clubDeals.offers[0].reply,"declined");
+  assert.throws(()=>act(state,{type:"counter",offerId,salary:176000000}),/한 번/);
+  while(state.week<=state.clubDeals.offers[0].deadline) state=step(state).state;
+  assert.throws(()=>act(state,{type:"accept-offer",offerId}),/기한/);
+  state.clubDeals.offers[0].salary=-1;
+  assert.throws(()=>parseSave(JSON.stringify(state)),/협상/);
+});

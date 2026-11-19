@@ -1,6 +1,6 @@
 {
   "name": "callup-baseball-agency",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,5 +8,7 @@
     "test": "npm run build && node --test tests/game.test.mjs",
     "android": "npm run build && pwsh -NoProfile -File android/build.ps1"
   },
-  "devDependencies": {"typescript": "^5.9.3"}
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
 }

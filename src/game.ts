@@ -1,3 +1,6 @@
+import {advanceClubDeals, applyClubDeal, validateClubDeals,
+  type ClubDeals, type DealCommand} from "./club-deals.js";
+
 export const markets = ["한국", "일본", "대만", "미국"] as const;
 export type Market = typeof markets[number];
 export interface Player {
@@ -30,8 +33,9 @@ export interface State {
   version:1; seed:number; week:number; agency:string; money:number; nextId:number;
   missions:Mission[]; reports:Report[]; interests:string[]; clients:string[];
   meetings:{playerId:string; due:number}[]; matters:Matter[]; summaries:Summary[];
+  clubDeals:ClubDeals;
 }
-export type Command =
+export type Command = DealCommand
   | {type:"dispatch"; market:Market}
   | {type:"interest"; playerId:string}
   | {type:"meeting"; playerId:string}
@@ -44,6 +48,7 @@ export const missionWeeks = (market:Market) => market === "한국" ? 2 : 3;
 export function createState(agency = "콜업 에이전시", seed = 20261119):State {
   return {version:1,seed,week:1,agency:agency.trim().slice(0,24) || "콜업 에이전시",
     money:15000000,nextId:1,missions:[],reports:[],interests:[],clients:[],meetings:[],matters:[],
+    clubDeals:{offers:[],contract:null},
     summaries:[{week:1,text:"창업 첫 주입니다. 국내외 조사 지역을 정하고 첫 파견을 준비하세요."}]};
 }
 function requirePlayer(id:string):Player {
@@ -54,6 +59,11 @@ function requirePlayer(id:string):Player {
 export function act(current:State, command:Command):State {
   const state = structuredClone(current);
   switch (command.type) {
+    case "recommend":
+    case "counter":
+    case "accept-offer":
+      applyClubDeal(state,command);
+      break;
     case "dispatch":
       if (!markets.includes(command.market)) throw new Error("조사 지역을 선택하세요.");
       if (state.missions.length) throw new Error("파견 중인 스카우트가 돌아오면 다시 보낼 수 있습니다.");
@@ -129,14 +139,21 @@ export function step(current:State):{state:State; important:boolean} {
     matter.done = true;
     notes.push(matter.title+"의 답변 기한이 지났습니다.");
   }
+  const clubNews=advanceClubDeals(state);
+  notes.push(...clubNews);
+  important ||= clubNews.length>0;
   state.summaries.unshift({week:state.week,text:notes.join(" ") ||
     "새로 도착한 안건이 없습니다. 선수 기록과 조사 현황을 살펴보거나 다음 주로 진행하세요."});
   state.summaries = state.summaries.slice(0,52);
   return {state,important};
 }
+export function hasPendingDecision(state:State):boolean {
+  return state.matters.some(item=>!item.done) || state.clubDeals.offers.some(offer=>offer.status==="open");
+}
+
 export function advance(current:State, count:number):State[] {
   if (!Number.isInteger(count) || count < 1 || count > 4) throw new Error("1~4주를 선택하세요.");
-  const weeks = current.matters.some(item=>!item.done) ? 1 : count;
+  const weeks = hasPendingDecision(current) ? 1 : count;
   const states:State[] = [];
   let state = current;
   for (let index=0;index<weeks;index++) {
@@ -185,5 +202,6 @@ export function parseSave(text:string):State {
         !players.some(player=>player.id===item.playerId)) ||
       state.summaries.some(item=>!Number.isSafeInteger(item.week) || typeof item.text!=="string"))
     throw new Error("저장된 업무 이력이 손상되었습니다.");
+  validateClubDeals(state);
   return state;
 }

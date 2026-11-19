@@ -1,9 +1,10 @@
-import {act, advance, createState, markets, missionCost, missionWeeks, parseSave, players,
+import {act, advance, createState, hasPendingDecision, markets, missionCost, missionWeeks, parseSave, players,
   type Command, type Market, type Player, type State} from "./game.js";
+import {clubs, freeAgentId, playerAgrees, type ClubId} from "./club-deals.js";
 
 const root = document.querySelector<HTMLDivElement>("#app")!;
 const saveKey = "callup-save-v1";
-type Tab = "office" | "players" | "scout" | "market";
+type Tab = "office" | "players" | "scout" | "market" | "deals";
 let state = createState();
 let tab:Tab = "office";
 let market:Market = "한국";
@@ -37,6 +38,12 @@ function commit(next:State):void {
 function playerLine(player:Player):string {
   return `<span class="player-meta">${escape(player.age)}세 · ${escape(player.position)} · ${escape(player.club)} ${escape(player.level)}</span>`;
 }
+function currentPlayerLine(player:Player):string {
+  if (player.id!==freeAgentId) return playerLine(player);
+  const contract=state.clubDeals.contract;
+  const affiliation=contract?.status==="registered" ? clubs[contract.clubId].name+" 1군" : "자유계약 · 미국 마이너 출신";
+  return `<span class="player-meta">${player.age}세 · ${escape(player.position)} · ${affiliation}</span>`;
+}
 function portrait(player:Player, style:string):string {
   return `<div class="${style} portrait-photo ${escape(player.id)}" aria-hidden="true"></div>`;
 }
@@ -44,6 +51,7 @@ function office():string {
   const pending = state.matters.filter(item=>!item.done).sort((a,b)=>a.due-b.due);
   const arrived = state.reports.filter(report=>report.week===state.week);
   const mission = state.missions[0];
+  const openOffers=state.clubDeals.offers.filter(offer=>offer.status==="open").length;
   return `<section class="office-title"><div class="week-strip"><span>2026 시즌</span><span>${date(state.week)}</span></div>
     <h1>사무실</h1><p class="hero-week"><strong>${state.week}</strong> 주차</p></section>
     ${pending.length ? "" : arrived.length ? arrived.map(report=>
@@ -63,6 +71,7 @@ function office():string {
       <div class="actions">${button("고객 계약","sign",`data-id="${item.id}"`,false,"primary")}
       ${button("거절","decline",`data-id="${item.id}"`,false,"quiet")}</div></article>`).join("") :
       `<div class="empty"><p>답변을 기다리는 안건이 없습니다.</p></div>`}</section>
+    ${openOffers ? button(`구단 제안 ${openOffers}건 비교`,"tab",'data-tab="deals"',false,"secondary full") : ""}
     <section><div class="section-title"><h2>이번 주 주요 소식</h2></div>
       ${(pending.length ? arrived : []).map(report=>
         button(`<span><b>${report.market} 스카우트 복귀</b><small>후보 ${report.candidates.length}명 · 보고서 읽기</small></span><span aria-hidden="true">↗</span>`,
@@ -96,7 +105,9 @@ function myPlayers():string {
   return `<header class="page-title"><h1>내 선수</h1><p>고객 ${state.clients.length}명 · 관심 선수 ${state.interests.length}명</p></header>
     ${selected.map(player=>`<article class="player-row">${portrait(player,"portrait")}
       <div><p class="eyebrow">${state.clients.includes(player.id)?"담당 고객 · 2년 · 수수료 5%":"관심 선수"}</p>
-      <h2>${player.name}</h2>${playerLine(player)}<p class="record">${player.line}</p></div></article>`).join("") ||
+      <h2>${player.name}</h2>${currentPlayerLine(player)}<p class="record">${player.line}</p>
+      ${player.id===freeAgentId && state.clients.includes(player.id)
+        ? button("구단 협상","tab",'data-tab="deals"',false,"quiet") : ""}</div></article>`).join("") ||
       `<section class="empty"><h2>첫 인연을 기다립니다.</h2><p>스카우트 보고서에서 관심 등록이나 면담을 요청하세요.</p>
       ${button("스카우트로 이동","tab",'data-tab="scout"',false,"primary")}</section>`}`;
 }
@@ -104,8 +115,49 @@ function marketPage():string {
   return `<header class="page-title"><h1>시장</h1><p>가상 선수와 소속 현황</p></header>
     ${markets.map(item=>`<section class="market-section"><div class="section-title"><h2>${item}</h2><span>${item==="미국"?"마이너":"현지 관찰"}</span></div>
       ${players.filter(player=>player.market===item).map(player=>`<article class="market-player">${portrait(player,"portrait")}
-        <div><h3>${player.name}</h3>${playerLine(player)}<p class="record">${player.line}</p></div></article>`).join("")}</section>`).join("")}
+        <div><h3>${player.name}</h3>${currentPlayerLine(player)}<p class="record">${player.line}</p></div></article>`).join("")}</section>`).join("")}
     <p class="small">경기·순위의 실제 주차 집계는 다음 구현 단계입니다.</p>`;
+}
+function dealsPage():string {
+  const {offers,contract}=state.clubDeals;
+  const eligible=state.clients.includes(freeAgentId);
+  const labels={waiting:"구단 회신 대기",open:"응답 가능",counter:"역제안 회신 대기",expired:"기한 만료",closed:"다른 구단 계약으로 종료",accepted:"계약 확정"};
+  const player=players.find(player=>player.id===freeAgentId)!;
+  return `<header class="page-title"><h1>구단 협상</h1></header>
+    <article class="player-row">${portrait(player,"portrait")}<div><h2>${player.name}</h2>${currentPlayerLine(player)}
+      <p class="record">선발 우선 · 불펜은 연봉 2억 4,500만 원부터 동의</p></div></article>
+    ${contract ? `<section class="deal-card"><p class="deadline">${contract.status==="pending" ? "등록 대기 · "+contract.registrationWeek+"주차 등록 예정" : "등록 완료"}</p>
+      <h2>${clubs[contract.clubId].name}</h2><p>보장 연봉 ${money(contract.salary)} · ${clubs[contract.clubId].years}년</p>
+      <p>수수료 ${money(contract.fee)} · ${contract.status==="pending" ? "등록 시 입금" : "입금 완료"}</p></section>` : ""}
+    ${!eligible ? `<p class="small">미국에서 마커스 리드를 스카우트하고 고객 계약을 맺으면 구단에 추천할 수 있습니다.</p>
+      ${button("미국 스카우트","tab",'data-tab="scout" data-market="미국"',false,"secondary full")}` : ""}
+    ${!contract ? `<section><div class="section-title"><h2>구단 수요</h2></div>
+      ${Object.entries(clubs).map(([id,club])=>{
+        const sent=offers.some(offer=>offer.clubId===id && offer.status!=="expired");
+        return `<div class="deal-club"><div><b>${club.name}</b><small>${club.market} · ${club.role} · 외국인 자리 ${club.slots ? "1석" : "마감"}</small></div>
+          ${button(sent?"추천 완료":"추천","recommend",`data-id="${id}"`,!eligible || !club.slots || sent,"secondary")}</div>`;
+      }).join("")}</section>` : ""}
+    ${offers.length ? `<section><div class="section-title"><h2>구단 제안 비교</h2></div>
+      ${offers.slice().reverse().map(offer=>{
+        const club=clubs[offer.clubId];
+        const agrees=playerAgrees(offer);
+        const visible=offer.status!=="waiting" && !(offer.status==="closed" && offer.replyWeek>state.week && offer.requestedSalary===null);
+        return `<article class="deal-card"><p class="deadline">${labels[offer.status]}</p><h3>${club.name}</h3>
+          ${visible ? `<dl class="terms">
+            <div><dt>보장 연봉</dt><dd>${money(offer.salary)}</dd></div>
+            <div><dt>현지 통화</dt><dd>약 ${Math.round(offer.salary/club.rate).toLocaleString("ko-KR")} ${club.currency}</dd></div>
+            <div><dt>기간 · 역할</dt><dd>${club.years}년 · ${club.role}</dd></div>
+            <div><dt>응답 마감</dt><dd>${offer.deadline}주차</dd></div></dl>` :
+            `<p class="small">${offer.status==="waiting" ? offer.replyWeek+"주차 회신 예정" : "회신 전에 협상이 종료됐습니다."}</p>`}
+          ${offer.status==="counter" ? `<p class="small">${money(offer.requestedSalary!)} 요청 · ${offer.replyWeek}주차 회신 예정</p>` : ""}
+          ${offer.reply!=="none" ? `<p class="small">${offer.reply==="improved" ? "구단이 요청 연봉을 받아들였습니다." : "구단이 역제안을 거절했습니다. 기존 조건으로 결정할 수 있습니다."}</p>` : ""}
+          ${offer.status==="open" ? `<p class="small">${agrees ? "선수가 현재 조건에 동의합니다." : "선수가 현재 조건을 거절했습니다."}</p>
+            ${button("계약 확정","accept-offer",`data-id="${offer.id}"`,!agrees,"primary full")}
+            ${offer.requestedSalary===null && offer.deadline>state.week ? `<form class="counter-form" data-offer="${offer.id}">
+              <label for="salary-${offer.id}">역제안할 연봉 (원)</label>
+              <div><input type="number" inputmode="numeric" name="salary" id="salary-${offer.id}" required min="${offer.salary+1}" max="1000000000" value="${Math.floor(offer.salary*1.1)}">
+              <button class="secondary">역제안</button></div></form>` : ""}` : ""}</article>`;
+      }).join("")}</section>` : ""}`;
 }
 function report():string {
   const item = state.reports.find(item=>item.id===reportId);
@@ -144,10 +196,10 @@ function render():void {
       <button class="primary full" ${recovery?"disabled":""}>사무실 열기</button></form>`}</div></main>` :
       reportId ? report() : `<header class="masthead">${button("<span class='club-mark' aria-hidden='true'></span>","title",'aria-label="타이틀로 돌아가기"',false,"brand-button")}<div><b>${escape(state.agency)}</b><small>2026 · ${state.week}주차</small></div>
       <div class="balance"><small>운영 자금</small><b>${money(state.money)}</b></div></header>
-      <main id="content" tabindex="-1">${({office,players:myPlayers,scout,market:marketPage})[tab]()}</main>
-      <footer class="dock"><div class="progress-row"><select aria-label="진행할 주 수" id="weeks" ${state.matters.some(item=>!item.done)?"disabled":""}>
+      <main id="content" tabindex="-1">${({office,players:myPlayers,scout,market:marketPage,deals:dealsPage})[tab]()}</main>
+      <footer class="dock"><div class="progress-row"><select aria-label="진행할 주 수" id="weeks" ${hasPendingDecision(state)?"disabled":""}>
         <option value="1">1주</option><option value="4">최대 4주</option></select>${button("다음 주 진행","advance","",busy,"primary")}</div>
-      <nav aria-label="주요 화면">${([["office","사무실"],["players","내 선수"],["scout","스카우트"],["market","시장"]] as const)
+      <nav aria-label="주요 화면">${([["office","사무실"],["players","내 선수"],["scout","스카우트"],["market","시장"],["deals","협상"]] as const)
         .map(([key,title])=>button(`<span class="nav-icon ${key}" aria-hidden="true"></span>${title}`,"tab",`data-tab="${key}" ${tab===key?'aria-current="page"':""}`,false,tab===key?"active":"")).join("")}</nav></footer>`}
     </div>`;
   window.clearTimeout(noticeTimer);
@@ -163,6 +215,15 @@ async function execute(command:Command):Promise<void> {
 root.addEventListener("submit", event=>{
   event.preventDefault();
   const form = event.target as HTMLFormElement;
+  if (form.dataset.offer && !busy) {
+    notice=""; error="";
+    try {
+      commit(act(state,{type:"counter",offerId:form.dataset.offer,salary:Number(new FormData(form).get("salary"))}));
+      notice="역제안을 보냈습니다. 다음 주에 회신이 도착합니다.";
+    } catch (failure) {error=failure instanceof Error ? failure.message : "역제안을 저장하지 못했습니다.";}
+    render();
+    return;
+  }
   if (form.id!=="start") return;
   try {
     commit(createState(String(new FormData(form).get("agency") ?? "")));
@@ -186,7 +247,12 @@ root.addEventListener("click",async event=>{
     switch(action) {
       case "continue": started=true; tab="office"; break;
       case "title": started=false; break;
-      case "tab": tab=target.dataset.tab as Tab; break;
+      case "tab":
+        tab=target.dataset.tab as Tab;
+        if (target.dataset.market) market=target.dataset.market as Market;
+        break;
+      case "recommend": await execute({type:"recommend",playerId:freeAgentId,clubId:id as ClubId}); notice="구단에 선수를 추천했습니다."; break;
+      case "accept-offer": await execute({type:"accept-offer",offerId:id}); notice="계약을 확정했습니다. 다음 주에 등록합니다."; break;
       case "report": reportId=id; break;
       case "close": reportId=null; tab="office"; break;
       case "dispatch": await execute({type:"dispatch",market}); notice="파견을 저장했습니다."; break;
