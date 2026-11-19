@@ -27,8 +27,8 @@ try {
 const escape = (value:unknown) => String(value).replace(/[&<>"']/g, char =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]!));
 const money = (value:number) => new Intl.NumberFormat("ko-KR").format(value)+"원";
-const date = (week:number) => new Intl.DateTimeFormat("ko-KR",{month:"long",day:"numeric",timeZone:"UTC"})
-  .format(new Date(Date.UTC(2026,2,2)+(week-1)*7*86400000));
+const weekDate = (week:number) => new Date(Date.UTC(2026,2,2)+(week-1)*7*86400000);
+const date = (week:number) => new Intl.DateTimeFormat("ko-KR",{month:"long",day:"numeric",timeZone:"UTC"}).format(weekDate(week));
 const button = (text:string, action:string, extra="", disabled=false, style="") =>
   `<button type="button" data-action="${action}" ${extra} ${disabled?"disabled":""} class="${style}">${text}</button>`;
 function commit(next:State):void {
@@ -45,40 +45,39 @@ function currentPlayerLine(player:Player):string {
   return `<span class="player-meta">${player.age}세 · ${escape(player.position)} · ${affiliation}</span>`;
 }
 function portrait(player:Player, style:string):string {
-  return `<div class="${style} portrait-photo ${escape(player.id)}" aria-hidden="true"></div>`;
+  return `<span class="${style} portrait-photo ${escape(player.id)}" aria-hidden="true"></span>`;
+}
+function playerCard(player:Player, label:string):string {
+  return `${portrait(player,"pass-photo")}<span class="pass-data"><small>${label} · ${escape(player.market)}</small>
+    <strong>${escape(player.name)}</strong>${currentPlayerLine(player)}<span class="pass-record">${escape(player.line)}</span></span>`;
 }
 function office():string {
   const pending = state.matters.filter(item=>!item.done).sort((a,b)=>a.due-b.due);
   const arrived = state.reports.filter(report=>report.week===state.week);
   const mission = state.missions[0];
   const openOffers=state.clubDeals.offers.filter(offer=>offer.status==="open").length;
-  return `<section class="office-title"><div class="week-strip"><span>2026 시즌</span><span>${date(state.week)}</span></div>
-    <h1>사무실</h1><p class="hero-week"><strong>${state.week}</strong> 주차</p></section>
-    ${pending.length ? "" : arrived.length ? arrived.map(report=>
-      button(`<span><b>${report.market} 스카우트 복귀</b><small>후보 ${report.candidates.length}명</small></span><span>보고서 읽기</span>`,
-        "report",`data-id="${report.id}"`,false,"office-action")).join("") :
-      button(`<span><b>${mission ? mission.market+" 스카우트 파견 중" : "스카우트 파견"}</b>
-        <small>${mission ? (mission.due-state.week)+"주 뒤 복귀" : "조사 지역과 비용을 확인하세요."}</small></span>
-        <span>${mission ? "현황 보기" : "파견 준비"}</span>`,"tab",'data-tab="scout"',false,"office-action")}
-    <div class="office-summary">
-      ${button(`<span>고객</span><strong>${state.clients.length} <small>/ 3</small></strong>`,"tab",'data-tab="players"',false,"stat")}
-      ${button(`<span>관심 선수</span><strong>${state.interests.length}</strong>`,"tab",'data-tab="players"',false,"stat")}
-      ${button(`<span>스카우트</span><strong>${state.missions.length ? "파견 중" : "대기"}</strong>`,"tab",'data-tab="scout"',false,"stat")}
-    </div>
-    <section class="agenda"><div class="section-title"><h2>기한이 있는 안건</h2><span>${pending.length}건</span></div>
-    ${pending.length ? pending.map(item=>`<article class="matter"><p class="deadline">${item.due-state.week}주 뒤 마감</p>
-      <h3>${escape(item.title)}</h3><p>${escape(item.body)}</p>
-      <div class="actions">${button("고객 계약","sign",`data-id="${item.id}"`,false,"primary")}
-      ${button("거절","decline",`data-id="${item.id}"`,false,"quiet")}</div></article>`).join("") :
-      `<div class="empty"><p>답변을 기다리는 안건이 없습니다.</p></div>`}</section>
-    ${openOffers ? button(`구단 제안 ${openOffers}건 비교`,"tab",'data-tab="deals"',false,"secondary full") : ""}
-    <section><div class="section-title"><h2>이번 주 주요 소식</h2></div>
-      ${(pending.length ? arrived : []).map(report=>
-        button(`<span><b>${report.market} 스카우트 복귀</b><small>후보 ${report.candidates.length}명 · 보고서 읽기</small></span><span aria-hidden="true">↗</span>`,
-          "report",`data-id="${report.id}"`,false,"news-row")).join("")}
+  const featured=players.find(player=>state.clients.includes(player.id));
+  return `<section class="office-title" aria-label="사무실">
+      <p class="week-strip">${weekDate(state.week).getUTCFullYear()} 시즌</p><h1>${state.week}<small>주차</small></h1>
+      <p class="hero-date">${date(state.week)} 월요일</p></section>
+    <section class="agenda"><div class="section-title"><h2>이번 주 업무</h2></div>
+      ${pending.map(item=>`<article class="matter"><p class="deadline">${item.due===state.week?"이번 주 마감":(item.due-state.week)+"주 뒤 마감"}</p>
+        <h3>${escape(item.title)}</h3><p>${escape(item.body)}</p>
+        <div class="actions">${button("고객 계약","sign",`data-id="${item.id}"`,false,"primary")}
+        ${button("거절","decline",`data-id="${item.id}"`,false,"quiet")}</div></article>`).join("")}
+      ${openOffers ? button(`구단 제안 ${openOffers}건 비교`,"tab",'data-tab="deals"',false,"primary full") : ""}
+      ${arrived.map(report=>button(`<span><b>${report.market} 스카우트 보고서</b><small>후보 ${report.candidates.length}명 · 이번 주 도착</small></span><span>열기 ›</span>`,
+        "report",`data-id="${report.id}"`,false,"office-action")).join("")}
+      ${pending.length || openOffers || arrived.length ? "" : button(`<span><b>${mission ? mission.market+" 조사 중" : "스카우트 파견"}</b>
+        <small>${mission ? date(mission.due)+" 복귀 예정" : "국내외에서 새 선수를 발굴하세요."}</small></span><span>${mission ? "현황" : "지역 선택"} ›</span>`,"tab",'data-tab="scout"',false,"office-action")}
+      ${state.meetings.map(item=>`<p class="task-line">${escape(players.find(player=>player.id===item.playerId)!.name)} 면담 답변 · ${date(item.due)} 예정</p>`).join("")}
+    </section>
+    <section class="roster-desk"><div class="section-title"><h2>담당 선수</h2>${button(`선수 명단 ${state.clients.length}/3 ›`,"tab",'data-tab="players"',false,"section-link")}</div>
+      ${featured ? button(playerCard(featured,"담당 고객"),"tab",'data-tab="players"',false,"player-pass") :
+        `<p class="empty">보고서에서 선수를 만나 첫 고객 계약을 맺으세요.</p>`}
+    </section>
+    <section><div class="section-title"><h2>이번 주 소식</h2></div>
       <p class="weekly-note">${escape(state.summaries[0]?.text ?? "")}</p>
-      ${state.meetings.map(item=>`<p class="task-line">${escape(players.find(player=>player.id===item.playerId)!.name)} 면담 답변 · ${item.due-state.week}주 뒤</p>`).join("")}
-      ${pending.length && mission ? `<p class="task-line">${mission.market} 스카우트 파견 중 · ${mission.due-state.week}주 뒤 복귀</p>` : ""}
     </section>
     <details ${showHistory?"open":""} id="history"><summary>지난 주 업무 기록</summary>
       ${state.summaries.slice(1).map(item=>`<p><b>${item.week}주차</b> ${escape(item.text)}</p>`).join("") ||
@@ -86,16 +85,19 @@ function office():string {
 }
 function scout():string {
   const running = state.missions[0];
+  const selected = running?.market ?? market;
   return `<header class="page-title"><h1>스카우트</h1></header>
-    <section class="dispatch"><h2>새 파견</h2><label for="scout-market">조사 지역</label>
-      <select id="scout-market" ${running?"disabled":""}>${markets.map(item=>`<option ${market===item?"selected":""}>${item}</option>`).join("")}</select>
-      <dl class="terms"><div><dt>조사 비용</dt><dd>${money(missionCost(market))}</dd></div><div><dt>예상 기간</dt><dd>${missionWeeks(market)}주</dd></div></dl>
-      ${button(running?"스카우트 파견 중":"파견하기","dispatch","",!!running || state.money<missionCost(market),"primary full")}
-      <p class="small">${running?`${running.market} 조사 중 · ${date(running.due)} 복귀 예정`:"동시에 한 지역을 조사할 수 있습니다. 후보가 없는 보고서도 도착할 수 있습니다."}</p>
+    <section class="dispatch"><h2>${running ? "파견 현황" : "조사 지역"}</h2>
+      <div class="regions" role="group" aria-label="조사 지역">${markets.map(item=>button(item,"region",
+        `data-market="${item}" aria-pressed="${selected===item}"`,!!running,selected===item?"chosen":"")).join("")}</div>
+      <dl class="route-terms"><div><dt>조사 비용</dt><dd>${money(missionCost(selected))}</dd></div>
+      <div><dt>${running?"복귀 예정":"예상 기간"}</dt><dd>${running?date(running.due):missionWeeks(selected)+"주"}</dd></div></dl>
+      ${running ? `<p class="route-state">${running.market} 조사 중 · 복귀까지 ${running.due-state.week}주</p>` :
+        button(state.money<missionCost(selected)?"파견 비용 부족":selected+" 스카우트 파견","dispatch","",state.money<missionCost(selected),"primary full")}
     </section>
     <section><div class="section-title"><h2>도착한 보고서</h2><span>${state.reports.length}건</span></div>
       ${state.reports.slice().reverse().map(report=>button(
-        `<span><small>${date(report.week)} · 관찰 기록</small><b>${report.market} 스카우트 보고서</b><small>후보 ${report.candidates.length}명 · ${report.page+1}장부터 이어 읽기</small></span><span aria-hidden="true">↗</span>`,
+        `${report.candidates[0] ? portrait(report.candidates[0].player,"report-thumb") : ""}<span class="report-copy"><small>${date(report.week)} · 관찰 기록</small><b>${report.market} 스카우트 보고서</b><small>후보 ${report.candidates.length}명 · ${report.page+1}장부터 이어 읽기</small></span><span aria-hidden="true">↗</span>`,
         "report",`data-id="${report.id}"`,false,"report-row")).join("") ||
         '<p class="empty">첫 파견이 끝나면 조사 당시의 기록과 의견을 보관합니다.</p>'}
     </section>`;
@@ -103,11 +105,14 @@ function scout():string {
 function myPlayers():string {
   const selected = players.filter(player=>state.clients.includes(player.id) || state.interests.includes(player.id));
   return `<header class="page-title"><h1>내 선수</h1><p>고객 ${state.clients.length}명 · 관심 선수 ${state.interests.length}명</p></header>
-    ${selected.map(player=>`<article class="player-row">${portrait(player,"portrait")}
-      <div><p class="eyebrow">${state.clients.includes(player.id)?"담당 고객 · 2년 · 수수료 5%":"관심 선수"}</p>
-      <h2>${player.name}</h2>${currentPlayerLine(player)}<p class="record">${player.line}</p>
-      ${player.id===freeAgentId && state.clients.includes(player.id)
-        ? button("구단 협상","tab",'data-tab="deals"',false,"quiet") : ""}</div></article>`).join("") ||
+    ${selected.map(player=>{
+      const client=state.clients.includes(player.id);
+      const latest=state.reports.slice().reverse().find(report=>report.candidates.some(candidate=>candidate.player.id===player.id));
+      return `<article class="roster-entry"><div class="player-pass">${playerCard(player,client?"담당 고객":"관심 선수")}</div>
+        <div class="contract-strip">${client ? "<span>계약 2년 · 수수료 5%</span>" : ""}
+          ${latest ? button("관찰 기록 열기","report",`data-id="${latest.id}" data-player="${player.id}"`,false,"section-link") : ""}
+          ${client && player.id===freeAgentId ? button("구단 협상","tab",'data-tab="deals"',false,"section-link") : ""}</div></article>`;
+    }).join("") ||
       `<section class="empty"><h2>첫 인연을 기다립니다.</h2><p>스카우트 보고서에서 관심 등록이나 면담을 요청하세요.</p>
       ${button("스카우트로 이동","tab",'data-tab="scout"',false,"primary")}</section>`}`;
 }
@@ -116,7 +121,7 @@ function marketPage():string {
     ${markets.map(item=>`<section class="market-section"><div class="section-title"><h2>${item}</h2><span>${item==="미국"?"마이너":"현지 관찰"}</span></div>
       ${players.filter(player=>player.market===item).map(player=>`<article class="market-player">${portrait(player,"portrait")}
         <div><h3>${player.name}</h3>${currentPlayerLine(player)}<p class="record">${player.line}</p></div></article>`).join("")}</section>`).join("")}
-    <p class="small">경기·순위의 실제 주차 집계는 다음 구현 단계입니다.</p>`;
+    `;
 }
 function dealsPage():string {
   const {offers,contract}=state.clubDeals;
@@ -124,19 +129,13 @@ function dealsPage():string {
   const labels={waiting:"구단 회신 대기",open:"응답 가능",counter:"역제안 회신 대기",expired:"기한 만료",closed:"다른 구단 계약으로 종료",accepted:"계약 확정"};
   const player=players.find(player=>player.id===freeAgentId)!;
   return `<header class="page-title"><h1>구단 협상</h1></header>
-    <article class="player-row">${portrait(player,"portrait")}<div><h2>${player.name}</h2>${currentPlayerLine(player)}
-      <p class="record">선발 우선 · 불펜은 연봉 2억 4,500만 원부터 동의</p></div></article>
+    <div class="player-pass">${playerCard(player,eligible?"담당 고객":"협상 대상")}</div>
+    <p class="contract-strip">선발 선호 · 불펜 희망 연봉 2억 4,500만 원 이상</p>
     ${contract ? `<section class="deal-card"><p class="deadline">${contract.status==="pending" ? "등록 대기 · "+contract.registrationWeek+"주차 등록 예정" : "등록 완료"}</p>
       <h2>${clubs[contract.clubId].name}</h2><p>보장 연봉 ${money(contract.salary)} · ${clubs[contract.clubId].years}년</p>
       <p>수수료 ${money(contract.fee)} · ${contract.status==="pending" ? "등록 시 입금" : "입금 완료"}</p></section>` : ""}
     ${!eligible ? `<p class="small">미국에서 마커스 리드를 스카우트하고 고객 계약을 맺으면 구단에 추천할 수 있습니다.</p>
       ${button("미국 스카우트","tab",'data-tab="scout" data-market="미국"',false,"secondary full")}` : ""}
-    ${!contract ? `<section><div class="section-title"><h2>구단 수요</h2></div>
-      ${Object.entries(clubs).map(([id,club])=>{
-        const sent=offers.some(offer=>offer.clubId===id && offer.status!=="expired");
-        return `<div class="deal-club"><div><b>${club.name}</b><small>${club.market} · ${club.role} · 외국인 자리 ${club.slots ? "1석" : "마감"}</small></div>
-          ${button(sent?"추천 완료":"추천","recommend",`data-id="${id}"`,!eligible || !club.slots || sent,"secondary")}</div>`;
-      }).join("")}</section>` : ""}
     ${offers.length ? `<section><div class="section-title"><h2>구단 제안 비교</h2></div>
       ${offers.slice().reverse().map(offer=>{
         const club=clubs[offer.clubId];
@@ -157,6 +156,12 @@ function dealsPage():string {
               <label for="salary-${offer.id}">역제안할 연봉 (원)</label>
               <div><input type="number" inputmode="numeric" name="salary" id="salary-${offer.id}" required min="${offer.salary+1}" max="1000000000" value="${Math.floor(offer.salary*1.1)}">
               <button class="secondary">역제안</button></div></form>` : ""}` : ""}</article>`;
+      }).join("")}</section>` : ""}
+    ${!contract ? `<section><div class="section-title"><h2>구단 수요</h2></div>
+      ${Object.entries(clubs).map(([id,club])=>{
+        const sent=offers.some(offer=>offer.clubId===id && offer.status!=="expired");
+        return `<div class="deal-club"><div><b>${club.name}</b><small>${club.market} · ${club.role} · 외국인 자리 ${club.slots ? "1석" : "마감"}</small></div>
+          ${button(sent?"추천 완료":"추천","recommend",`data-id="${id}"`,!eligible || !club.slots || sent,"secondary")}</div>`;
       }).join("")}</section>` : ""}`;
 }
 function report():string {
@@ -166,7 +171,7 @@ function report():string {
   const player = candidate?.player;
   const requested = player && (state.meetings.some(meeting=>meeting.playerId===player.id) ||
     state.matters.some(matter=>matter.playerId===player.id && !matter.done));
-  return `<div class="report-view"><header class="report-top">${button("사무실로","close","",false,"quiet")}
+  return `<div class="report-view"><header class="report-top">${button(tab==="scout"?"스카우트로":tab==="players"?"선수 명단으로":"사무실로","close","",false,"quiet")}
     <span>${item.market} 조사 · ${date(item.week)}</span><span>${item.page+1} / ${Math.max(1,item.candidates.length)}</span></header>
     <article class="paper" aria-label="스카우트 보고서" id="paper" tabindex="-1">
       ${player ? `<div class="player-hero">${portrait(player,"hero-portrait")}
@@ -194,7 +199,7 @@ function render():void {
       ${button("이어하기","continue","",false,"primary full")}` :
       `<form id="start"><label for="agency">에이전시 이름</label><input id="agency" name="agency" required maxlength="24" value="콜업 에이전시" autocomplete="organization">
       <button class="primary full" ${recovery?"disabled":""}>사무실 열기</button></form>`}</div></main>` :
-      reportId ? report() : `<header class="masthead">${button("<span class='club-mark' aria-hidden='true'></span>","title",'aria-label="타이틀로 돌아가기"',false,"brand-button")}<div><b>${escape(state.agency)}</b><small>2026 · ${state.week}주차</small></div>
+      reportId ? report() : `<header class="masthead">${button("<span class='club-mark' aria-hidden='true'></span>","title",'aria-label="타이틀로 돌아가기"',false,"brand-button")}<div><b>${escape(state.agency)}</b><small>${weekDate(state.week).getUTCFullYear()} · ${state.week}주차</small></div>
       <div class="balance"><small>운영 자금</small><b>${money(state.money)}</b></div></header>
       <main id="content" tabindex="-1">${({office,players:myPlayers,scout,market:marketPage,deals:dealsPage})[tab]()}</main>
       <footer class="dock"><div class="progress-row"><select aria-label="진행할 주 수" id="weeks" ${hasPendingDecision(state)?"disabled":""}>
@@ -230,10 +235,6 @@ root.addEventListener("submit", event=>{
     started = true; hasSave = true; error = ""; render();
   } catch {error="저장 공간에 쓸 수 없습니다. 기기의 저장 공간과 앱 권한을 확인하세요."; render();}
 });
-root.addEventListener("change",event=>{
-  const field = event.target as HTMLSelectElement;
-  if (field.id==="scout-market") {market=field.value as Market; render();}
-});
 root.addEventListener("toggle",event=>{
   if ((event.target as HTMLElement).id==="history") showHistory=(event.target as HTMLDetailsElement).open;
 },true);
@@ -253,8 +254,17 @@ root.addEventListener("click",async event=>{
         break;
       case "recommend": await execute({type:"recommend",playerId:freeAgentId,clubId:id as ClubId}); notice="구단에 선수를 추천했습니다."; break;
       case "accept-offer": await execute({type:"accept-offer",offerId:id}); notice="계약을 확정했습니다. 다음 주에 등록합니다."; break;
-      case "report": reportId=id; break;
-      case "close": reportId=null; tab="office"; break;
+      case "report": {
+        if (target.dataset.player) {
+          const item=state.reports.find(report=>report.id===id)!;
+          const page=item.candidates.findIndex(candidate=>candidate.player.id===target.dataset.player);
+          if (page!==item.page) await execute({type:"page",reportId:id,page});
+        }
+        reportId=id;
+        break;
+      }
+      case "close": reportId=null; break;
+      case "region": market=target.dataset.market as Market; break;
       case "dispatch": await execute({type:"dispatch",market}); notice="파견을 저장했습니다."; break;
       case "interest": await execute({type:"interest",playerId:id}); notice="관심 선수로 등록했습니다."; break;
       case "meeting": await execute({type:"meeting",playerId:id}); notice="면담을 요청했습니다. 다음 주에 답변이 도착합니다."; break;
@@ -295,7 +305,8 @@ root.addEventListener("click",async event=>{
   } finally {
     busy=false;
     render();
-    if (["tab","report","close","next","prev","continue","title"].includes(action!)) {
+    if (action==="region") root.querySelector<HTMLButtonElement>('.regions [aria-pressed="true"]')?.focus({preventScroll:true});
+    if (["tab","report","close","next","prev","continue","title","advance"].includes(action!)) {
       root.querySelector<HTMLElement>(reportId?"#paper":"#content")?.focus({preventScroll:true});
       window.scrollTo(0,0);
     }

@@ -11,7 +11,7 @@ New-Item -ItemType Directory -Force "$build/classes", "$build/res/drawable", "$a
 Copy-Item index.html "$assets/index.html"
 Copy-Item dist/game.js,dist/main.js,dist/club-deals.js "$assets/dist/"
 Copy-Item src/style.css "$assets/src/style.css"
-Copy-Item src/art/stadium.jpg,src/art/players.jpg "$assets/src/art/"
+Copy-Item src/art/stadium.jpg,src/art/players.jpg,src/art/office.jpg "$assets/src/art/"
 @'
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
     <path android:fillColor="#141C29" android:pathData="M0,0H48V48H0Z"/>
