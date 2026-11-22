@@ -2,7 +2,22 @@ export type Tier = "1군" | "2군";
 export interface Domestic {
   firstWeek:number;
   promotionWeek:number|null;
+  renewals:Renewal[];
 }
+const renewalStatuses=["open","counter","pending","registered","declined","expired"] as const;
+interface Renewal {
+  season:number;
+  salary:number;
+  status:typeof renewalStatuses[number];
+  raise:10|25|null;
+  replyWeek:number|null;
+}
+export type RenewalCommand =
+  | {type:"renewal-counter"; season:number; raise:10|25}
+  | {type:"renewal-accept"|"renewal-decline"; season:number};
+export const renewalDeadline=(season:number)=>(season-1)*52+39;
+export const renewalRegistration=(season:number)=>season*52+1;
+export const renewalFee=(salary:number)=>Math.floor(salary/20);
 export const domesticPlayer = "kr-1";
 export const domesticTeams = ["인천 웨이브스", "수원 레일스"] as const;
 const emptyBatting = () => ({pa:0, hits:0, walks:0, bases:0});
@@ -91,4 +106,87 @@ export function schedulePromotion(seed:number, week:number, domestic:Domestic):v
   const {batting}=koreaSeason(seed,week,domestic,"2군");
   const ab=batting.pa-batting.walks;
   if (ab>=16 && batting.hits/ab>=.300) domestic.promotionWeek=week+1;
+}
+
+function renewalTerms(seed:number, domestic:Domestic, season:number) {
+  const seasonEnd=(season-1)*52+33;
+  const first=koreaSeason(seed,seasonEnd,domestic,"1군").batting;
+  const second=koreaSeason(seed,seasonEnd,domestic,"2군").batting;
+  const salary=32000000+Math.min(16000000,first.pa*100000+second.pa*50000);
+  const ab=first.pa-first.walks;
+  return {played:first.pa+second.pa>0,salary,raiseLimit:ab>=50 && first.hits/ab>=.32 ? 25 : 10};
+}
+
+export const renewalOpeningSalary=(seed:number,domestic:Domestic,season:number)=>renewalTerms(seed,domestic,season).salary;
+
+export function applyRenewal(domestic:Domestic, week:number, command:RenewalCommand):void {
+  const renewal=domestic.renewals.find(item=>item.season===command.season);
+  if (command.type==="renewal-accept" && (renewal?.status==="pending" || renewal?.status==="registered")) return;
+  if (!renewal || renewal.status!=="open" || week>renewalDeadline(renewal.season))
+    throw new Error("응답할 수 있는 국내 연봉 제안이 없습니다.");
+  if (command.type==="renewal-counter") {
+    if (renewal.raise!==null || week>=renewalDeadline(renewal.season) || (command.raise!==10 && command.raise!==25))
+      throw new Error("역제안은 마감 전까지 10% 또는 25%로 한 번 가능합니다.");
+    renewal.raise=command.raise;
+    renewal.replyWeek=week+1;
+    renewal.status="counter";
+    return;
+  }
+  renewal.status=command.type==="renewal-accept"?"pending":"declined";
+}
+
+export function advanceRenewals(seed:number, week:number, domestic:Domestic, client:boolean) {
+  const {round,season}=calendar(week);
+  const notes:string[]=[];
+  let fee=0;
+  if (round===36 && client) {
+    const terms=renewalTerms(seed,domestic,season);
+    if (terms.played) {
+      domestic.renewals.push({season,salary:terms.salary,status:"open",raise:null,replyWeek:null});
+      notes.push("인천 웨이브스가 서도윤의 다음 시즌 연봉을 제안했습니다.");
+    }
+  }
+  for (const renewal of domestic.renewals.slice(-2)) {
+    if (renewal.status==="open" && week>renewalDeadline(renewal.season)) {
+      renewal.status="expired";
+      notes.push("서도윤의 연봉 제안 기한이 지났습니다.");
+    } else if (renewal.status==="counter" && renewal.replyWeek===week) {
+      const terms=renewalTerms(seed,domestic,renewal.season);
+      const raise=renewal.raise!;
+      if (raise<=terms.raiseLimit) {
+        renewal.salary=Math.floor(terms.salary*(100+raise)/100);
+        notes.push("인천이 서도윤의 연봉 인상 요청을 받아들였습니다.");
+      } else notes.push("인천이 기존 연봉 조건을 유지했습니다.");
+      renewal.status="open";
+    } else if (renewal.status==="pending" && renewalRegistration(renewal.season)===week) {
+      renewal.status="registered";
+      fee=renewalFee(renewal.salary);
+      notes.push("서도윤의 재계약을 등록하고 에이전시 수수료가 입금됐습니다.");
+    }
+  }
+  return {notes,fee};
+}
+
+export function validateRenewals(domestic:Domestic, seed:number, week:number, client:boolean) {
+  if (domestic.renewals===undefined) domestic.renewals=[];
+  const invalid=()=>new Error("국내 연봉 협상 정보가 손상되었습니다.");
+  if (!Array.isArray(domestic.renewals) || (domestic.renewals.length>0 && !client)) throw invalid();
+  let previous=0;
+  for (const item of domestic.renewals) {
+    if (!item || !Number.isSafeInteger(item.season) || item.season<=previous || item.season>calendar(week).season ||
+        !renewalStatuses.includes(item.status)) throw invalid();
+    const deadline=renewalDeadline(item.season);
+    if (week<deadline-3 || domestic.firstWeek>deadline-6) throw invalid();
+    if (item.raise===null ? item.replyWeek!==null || item.status==="counter" :
+        (item.raise!==10 && item.raise!==25) || !Number.isSafeInteger(item.replyWeek) || item.replyWeek!<deadline-2 ||
+        item.replyWeek!>deadline || (item.status==="counter" ? item.replyWeek!<=week : item.replyWeek!>week)) throw invalid();
+    if (item.status==="open" && week>deadline || item.status==="expired" && week<=deadline ||
+        item.status==="pending" && week>=renewalRegistration(item.season) ||
+        item.status==="registered" && week<renewalRegistration(item.season)) throw invalid();
+    const terms=renewalTerms(seed,domestic,item.season);
+    const raise=item.raise??0;
+    const salary=item.status!=="counter" && raise<=terms.raiseLimit ? Math.floor(terms.salary*(100+raise)/100) : terms.salary;
+    if (!terms.played || item.salary!==salary) throw invalid();
+    previous=item.season;
+  }
 }

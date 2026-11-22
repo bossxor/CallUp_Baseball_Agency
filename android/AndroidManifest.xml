@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.callup.agency" android:versionCode="5" android:versionName="0.1.4">
+    package="com.callup.agency" android:versionCode="6" android:versionName="0.1.5">
     <uses-sdk android:minSdkVersion="32" android:targetSdkVersion="35" />
     <application android:label="콜업" android:icon="@drawable/launcher"
         android:allowBackup="false" android:theme="@android:style/Theme.Material.NoActionBar">

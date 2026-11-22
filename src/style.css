@@ -246,3 +246,16 @@ button:enabled:active { filter:brightness(.87); }
 .league-board thead { font-size:.75rem; color:#cadbc9; }
 .league-batter { margin-top:10px; color:#f2dcb4; font-size:.82rem; }
 .market-player+.secondary { margin-top:12px; }
+
+.renewal-slip { background:var(--stock); color:var(--print); border-radius:5px 12px 5px 5px; padding:16px; }
+.renewal-slip .section-title { border-color:#8f9d99; }
+.renewal-slip .section-title span,.renewal-slip dt,.renewal-slip .small { color:var(--print-muted); }
+.renewal-club { font-size:.85rem; margin-top:8px; }
+.renewal-slip dd { text-align:right; font-weight:750; }
+.renewal-slip .secondary { color:var(--print); border-color:#6b807f; }
+.renewal-actions,.renewal-counter,.season-switch { display:flex; gap:8px; flex-wrap:wrap; }
+.renewal-actions button,.renewal-counter button { flex:1 1 110px; padding-inline:8px; }
+.renewal-counter,.season-switch { margin-top:12px; }
+.season-switch button { padding-inline:8px; font-size:.83rem; }
+.season-switch [aria-pressed="true"] { background:#25494b; border-color:#b5cac1; }
+.overseas-title { margin:4px 0 10px; }

@@ -1,4 +1,4 @@
-import {battingLine, calendar, domesticTeams, domesticPlayer, koreaSeason, schedulePromotion, tierAt, type Domestic} from "./korea.js";
+import {advanceRenewals, applyRenewal, battingLine, calendar, domesticTeams, domesticPlayer, koreaSeason, schedulePromotion, tierAt, validateRenewals, type Domestic, type RenewalCommand} from "./korea.js";
 import {advanceClubDeals, applyClubDeal, validateClubDeals,
   type ClubDeals, type DealCommand} from "./club-deals.js";
 
@@ -46,7 +46,7 @@ export interface State {
   domestic:Domestic;
   clubDeals:ClubDeals;
 }
-export type Command = DealCommand
+export type Command = DealCommand | RenewalCommand
   | {type:"introduction"}
   | {type:"dispatch"; market:Market}
   | {type:"follow-up"; playerId:string}
@@ -62,7 +62,7 @@ export const missionWeeks = (market:Market) => market === "한국" ? 2 : 3;
 export function createState(agency = "콜업 에이전시", seed = 20261119):State {
   return {version:1,seed,week:1,agency:agency.trim().slice(0,24) || "콜업 에이전시",
     money:15000000,nextId:1,missions:[],reports:[],interests:[],clients:[],meetings:[],matters:[],
-    domestic:{firstWeek:2,promotionWeek:null}, clubDeals:{offers:[],contract:null},
+    domestic:{firstWeek:2,promotionWeek:null,renewals:[]}, clubDeals:{offers:[],contract:null},
     summaries:[{week:1,text:"창업 첫 주입니다. 국내외 조사 지역을 정하고 첫 파견을 준비하세요."}]};
 }
 function requirePlayer(id:string):Player {
@@ -77,6 +77,12 @@ export function act(current:State, command:Command):State {
     case "counter":
     case "accept-offer":
       applyClubDeal(state,command);
+      break;
+    case "renewal-counter":
+    case "renewal-accept":
+    case "renewal-decline":
+      if (!state.clients.includes(domesticPlayer)) throw new Error("선수의 에이전시 계약을 확인하세요.");
+      applyRenewal(state.domestic,state.week,command);
       break;
     case "introduction": {
       if (state.reports.some(r=>r.id===introId)) return current;
@@ -196,7 +202,10 @@ export function step(current:State):{state:State; important:boolean} {
   }
   const clubNews=advanceClubDeals(state);
   notes.push(...clubNews);
-  important ||= clubNews.length>0;
+  const renewal=advanceRenewals(state.seed,state.week,state.domestic,state.clients.includes(domesticPlayer));
+  state.money+=renewal.fee;
+  notes.push(...renewal.notes);
+  important ||= clubNews.length>0 || renewal.notes.length>0;
   if (calendar(state.week).phase==="정규시즌") {
     const latest=koreaSeason(state.seed,state.week,state.domestic,"1군").games.at(-1);
     if (latest) notes.push(`국내 1군 · ${domesticTeams[0]} ${latest.runs[0]} : ${latest.runs[1]} ${domesticTeams[1]}`);
@@ -207,7 +216,8 @@ export function step(current:State):{state:State; important:boolean} {
   return {state,important};
 }
 export function hasPendingDecision(state:State):boolean {
-  return state.matters.some(item=>!item.done) || state.clubDeals.offers.some(offer=>offer.status==="open");
+  return state.matters.some(item=>!item.done) || state.clubDeals.offers.some(offer=>offer.status==="open") ||
+    state.domestic.renewals.at(-1)?.status==="open";
 }
 
 export function advance(current:State, count:number):State[] {
@@ -261,7 +271,7 @@ export function parseSave(text:string):State {
         !players.some(player=>player.id===item.playerId)) ||
       state.summaries.some(item=>!Number.isSafeInteger(item.week) || typeof item.text!=="string"))
     throw new Error("저장된 업무 이력이 손상되었습니다.");
-  if (state.domestic===undefined) state.domestic={firstWeek:state.week+1,promotionWeek:null};
+  if (state.domestic===undefined) state.domestic={firstWeek:state.week+1,promotionWeek:null,renewals:[]};
   const d=state.domestic;
   if (!d || !Number.isSafeInteger(d.firstWeek) || d.firstWeek<1 || d.firstWeek>state.week+1 ||
       (d.promotionWeek!==null && (!Number.isSafeInteger(d.promotionWeek) || d.promotionWeek<=d.firstWeek || d.promotionWeek>state.week+1)))
@@ -272,6 +282,7 @@ export function parseSave(text:string):State {
         ("candidates" in item && (item.candidates.length!==1 || item.candidates[0].player.id!==item.playerId)))
       throw new Error("추가 조사 기록이 손상되었습니다.");
   }
+  validateRenewals(state.domestic,state.seed,state.week,state.clients.includes(domesticPlayer));
   validateClubDeals(state);
   return state;
 }
