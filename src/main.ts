@@ -1,13 +1,16 @@
-import {battingLine, calendar, domesticPlayer, domesticTeams, koreaSeason, renewalDeadline, renewalFee, renewalOpeningSalary, renewalRegistration, type Tier} from "./korea.js";
+import {coachingCost, type SupportCase} from "./support.js";
+import {draftDeadline, draftFee, draftRegistration, draftRound, prospectId} from "./draft.js";
+import {battingLine, calendar, domesticPlayer, domesticTeams, koreaSeason, pitchingLine, renewalDeadline, renewalFee, renewalOpeningSalary, renewalRegistration, type Tier} from "./korea.js";
 import {act, advance, createState, currentProfile, followUpCost, introId, hasPendingDecision, markets, missionCost, missionWeeks, parseSave, players,
   type Command, type Market, type Player, type State} from "./game.js";
 import {clubs, freeAgentId, playerAgrees, type ClubId} from "./club-deals.js";
 
 const root = document.querySelector<HTMLDivElement>("#app")!;
 const saveKey = "callup-save-v1";
-type Tab = "office" | "players" | "scout" | "market" | "deals";
+type Tab = "office" | "players" | "scout" | "market" | "deals" | "finance";
 let state = createState();
 let tab:Tab = "office";
+let financeBack:Tab = "office";
 let market:Market = "한국";
 let marketView:Market = "한국";
 let marketTier:Tier = "1군";
@@ -64,6 +67,11 @@ function reportName(item:{id:string,playerId?:string, market:Market}):string {
 function upcoming():string {
   const entries:{week:number;label:string}[]=[];
   for (const m of state.missions) entries.push({week:m.due,label:(m.playerId?reportName(m):m.market+" 파견")+" 복귀"});
+  for (const item of state.support) {
+    const name=players.find(player=>player.id===item.playerId)!.name;
+    if (item.status==="open") entries.push({week:item.deadline,label:name+" 지원 결정 마감"});
+    if (item.status==="scheduled") entries.push({week:item.reviewWeek!,label:name+" 지원 결과"});
+  }
   for (const m of state.meetings) entries.push({week:m.due,label:players.find(p=>p.id===m.playerId)!.name+" 면담 답변"});
   for (const m of state.matters) if (!m.done) entries.push({week:m.due,label:m.title+" 마감"});
   for (const offer of state.clubDeals.offers) {
@@ -73,6 +81,10 @@ function upcoming():string {
   }
   const contract=state.clubDeals.contract;
   if (contract?.status==="pending") entries.push({week:contract.registrationWeek,label:clubs[contract.clubId].name+" 등록 · 수수료 입금"});
+  const draft=state.domestic.draft;
+  if (draft?.status==="open" || draft?.status==="counter") entries.push({week:draftDeadline(draft.season),label:"한지후 신인 계약 마감"});
+  if (draft?.status==="counter") entries.push({week:draft.replyWeek!,label:"한지후 계약금 역제안 회신"});
+  if (draft?.status==="pending") entries.push({week:draftRegistration(draft.season),label:"한지후 2군 등록"});
   const renewal=state.domestic.renewals.at(-1);
   if (renewal?.status==="open" || renewal?.status==="counter") entries.push({week:renewalDeadline(renewal.season),label:"서도윤 연봉 제안 마감"});
   if (renewal?.status==="counter") entries.push({week:renewal.replyWeek!,label:"서도윤 연봉 역제안 회신"});
@@ -81,19 +93,38 @@ function upcoming():string {
   if (promotion && promotion>state.week) entries.push({week:promotion,label:"서도윤 1군 등록"});
   for(let week=state.week+1;week<=state.week+4;week++){
     const season=calendar(week);
+    if (season.round===draftRound && (!draft || draft.status==="undrafted" || draft.status==="expired"))
+      entries.push({week,label:"국내 신인 드래프트"});
     if (season.phase!==calendar(week-1).phase) entries.push({week,label:"국내 "+season.phase+" 시작"});
   }
   const visible=entries.filter(item=>item.week>=state.week && item.week<=state.week+4).sort((a,b)=>a.week-b.week);
   return `<details id="calendar" ${showCalendar?"open":""}><summary>다가오는 4주 일정 · ${visible.length}건</summary>
     ${visible.map(item=>`<p><b>${date(item.week)}</b> ${escape(item.label)}</p>`).join("") || "<p>예정된 업무가 없습니다.</p>"}</details>`;
 }
+function supportCard(item:SupportCase):string {
+  const player=players.find(candidate=>candidate.id===item.playerId)!;
+  const role=item.playerId===domesticPlayer?"1군 외야 적응":"2군 불펜 적응";
+  const attrs=`data-id="${item.playerId}"`;
+  return `<article class="matter support-card">
+    <h3>${player.name} · ${role}</h3>
+    ${item.status==="open" ? `
+      <p>${date(item.deadline)}까지 지원을 선택하세요.</p>
+      <div class="renewal-actions">${button("역할 상담<small>무료</small>","support-talk",attrs,false,"primary")}
+      ${button("외부 코치<small>40만 원</small>","support-coach",attrs,state.money<coachingCost,"secondary")}</div>
+      <p class="small">상담은 1주, 외부 코치의 기록 점검은 2주 뒤 결과가 도착합니다.</p>` :
+      `<p>${item.status==="done" ? escape(item.report) : item.status==="scheduled" ? date(item.reviewWeek!)+" 결과 예정" : "지원 결정 기한 만료"}</p>`}
+  </article>`;
+}
 function office():string {
   const pending = state.matters.filter(item=>!item.done).sort((a,b)=>a.due-b.due);
+  const support=state.support.filter(item=>item.status==="open" || item.reviewWeek===state.week && item.status==="done");
   const arrived = state.reports.filter(report=>report.week===state.week && report.id!==introId);
   const mission = state.missions[0];
   const openOffers=state.clubDeals.offers.filter(offer=>offer.status==="open").length;
   const renewal=state.domestic.renewals.at(-1);
   const renewalOpen=renewal?.status==="open";
+  const draft=state.domestic.draft;
+  const draftOpen=draft?.status==="open" && state.clients.includes(prospectId);
   const featured=players.find(player=>state.clients.includes(player.id));
   return `<section class="office-title" aria-label="사무실">
       <p class="week-strip">${weekDate(state.week).getUTCFullYear()} · 국내 ${calendar(state.week).phase}</p><h1>${state.week}<small>주차</small></h1>
@@ -103,12 +134,15 @@ function office():string {
         <h3>${escape(item.title)}</h3><p>${escape(item.body)}</p>
         <div class="actions">${button("고객 계약","sign",`data-id="${item.id}"`,false,"primary")}
         ${button("거절","decline",`data-id="${item.id}"`,false,"quiet")}</div></article>`).join("")}
+      ${support.map(supportCard).join("")}
+      ${draftOpen ? button(`<span><b>한지후 신인 계약 제안</b><small>${domesticTeams[draft.team!]} · ${date(draftDeadline(draft.season))} 마감</small></span><span>협상 ›</span>`,
+        "tab",'data-tab="deals"',false,"office-action") : ""}
       ${renewalOpen ? button(`<span><b>서도윤 연봉 제안</b><small>${money(renewal.salary)} · ${date(renewalDeadline(renewal.season))} 마감</small></span><span>협상 ›</span>`,
         "tab",'data-tab="deals"',false,"office-action") : ""}
       ${openOffers ? button(`구단 제안 ${openOffers}건 비교`,"tab",'data-tab="deals"',false,"primary full") : ""}
       ${arrived.map(report=>button(`<span><b>${reportName(report)}</b><small>후보 ${report.candidates.length}명 · 이번 주 도착</small></span><span>열기 ›</span>`,
         "report",`data-id="${report.id}"`,false,"office-action")).join("")}
-      ${pending.length || renewalOpen || openOffers || arrived.length ? "" : button(`<span><b>${mission ? (mission.playerId ? reportName(mission) : mission.market+" 조사")+" 중" : "스카우트 파견"}</b>
+      ${pending.length || support.length || draftOpen || renewalOpen || openOffers || arrived.length ? "" : button(`<span><b>${mission ? (mission.playerId ? reportName(mission) : mission.market+" 조사")+" 중" : "스카우트 파견"}</b>
         <small>${mission ? date(mission.due)+" 복귀 예정" : "국내외에서 새 선수를 발굴하세요."}</small></span><span>${mission ? "현황" : "지역 선택"} ›</span>`,"tab",'data-tab="scout"',false,"office-action")}
       ${state.meetings.map(item=>`<p class="task-line">${escape(players.find(player=>player.id===item.playerId)!.name)} 면담 답변 · ${date(item.due)} 예정</p>`).join("")}
     </section>
@@ -153,12 +187,14 @@ function myPlayers():string {
       const client=state.clients.includes(player.id);
       const latest=state.reports.slice().reverse().find(report=>report.candidates.some(candidate=>candidate.player.id===player.id));
       const renewal=player.id===domesticPlayer ? state.domestic.renewals.at(-1) : undefined;
+      const draft=player.id===prospectId && state.domestic.draft;
+      const support=state.support.find(item=>item.playerId===player.id);
       return `<article class="roster-entry"><div class="player-pass">${playerCard(player,client?"담당 고객":"관심 선수")}</div>
         <div class="contract-strip">${client ? "<span>계약 2년 · 수수료 5%</span>" : ""}
           ${latest ? button("관찰 기록 열기","report",`data-id="${latest.id}" data-player="${player.id}"`,false,"section-link") : ""}
           ${!client && state.interests.includes(player.id) ? button("관심 해제","unwatch",`data-id="${player.id}"`,false,"section-link") : ""}
-          ${renewal || client && player.id===freeAgentId ? button("구단 협상","tab",'data-tab="deals"',false,"section-link") : ""}
-        </div></article>`;
+          ${draft || renewal || client && player.id===freeAgentId ? button("구단 협상","tab",'data-tab="deals"',false,"section-link") : ""}
+        </div>${support ? supportCard(support) : ""}</article>`;
     }).join("") ||
       `<section class="empty"><h2>첫 인연을 기다립니다.</h2><p>스카우트 보고서에서 관심 등록이나 면담을 요청하세요.</p>
       ${button("스카우트로 이동","tab",'data-tab="scout"',false,"primary")}</section>`}`;
@@ -166,6 +202,7 @@ function myPlayers():string {
 function marketPage():string {
   const season=calendar(state.week);
   const roster=players.filter(player=>player.market===marketView);
+  const draft=state.domestic.draft;
   const previousEnd=state.week-season.round-19;
   const hasArchive=previousEnd>=state.domestic.firstWeek;
   const archived=hasArchive && showLastSeason;
@@ -185,7 +222,12 @@ function marketPage():string {
       <table><caption>팀 순위</caption><thead><tr><th>순위</th><th>구단</th><th>승</th><th>무</th><th>패</th></tr></thead>
       <tbody>${[0,1].sort((a,b)=>league.wins[b]-league.wins[a]).map((team,i)=>`<tr><td>${league.games.length ? league.wins[0]===league.wins[1] ? 1 : i+1 : "—"}</td><th scope="row">${domesticTeams[team]}</th><td>${league.wins[team]}</td><td>${league.draws}</td><td>${league.wins[1-team]}</td></tr>`).join("")}</tbody></table>
       ${league.batting.pa ? `<p class="league-batter">서도윤 · ${marketTier} ${battingLine(league.batting)}</p>` : ""}
+      ${league.pitching.outs ? `<p class="league-batter">한지후 · 2군 ${pitchingLine(league.pitching)}</p>` : ""}
       </section>` : ""}
+    ${marketView==="한국" && draft ? `<section class="score-date">
+      <div class="section-title"><h2>신인 드래프트</h2><span>${draft.season}시즌</span></div>
+      <p class="weekly-note">${draft.team===null ? "한지후 미지명" :
+        "한지후 · "+domesticTeams[draft.team]+" "+draft.round+"라운드 지명"}${draft.status==="expired"?" · 계약 기한 만료":""}</p></section>` : ""}
     <section><div class="section-title"><h2>${marketView} 선수</h2></div>
       ${roster.map(original=>{const player=currentProfile(state,original);return `<article class="market-player">${portrait(player,"portrait")}
         <div><h3>${player.name}</h3>${currentPlayerLine(player)}<p class="record">${player.line}</p></div></article>`;}).join("")}
@@ -218,14 +260,39 @@ function domesticNegotiation():string {
       </div><p class="small">역제안은 한 번 가능합니다. 구단은 다음 주 회신합니다.</p>` : ""}` : ""}
   </section>`;
 }
+function draftNegotiation():string {
+  const draft=state.domestic.draft;
+  if (!draft || !state.clients.includes(prospectId)) return "";
+  const {status,team,round,season,salary,bonus,counter}=draft;
+  const labels={undrafted:"미지명",open:"제안 도착",counter:"회신 대기",pending:"등록 대기",registered:"입단 완료",expired:"기한 만료"};
+  const attrs=`data-id="${season}"`;
+  return `<section class="renewal-slip" aria-labelledby="draft-title">
+    <div class="section-title"><h2 id="draft-title">한지후 신인 계약</h2><span>${labels[status]}</span></div>
+    ${team===null || status==="expired" ? `<p class="renewal-club">다음 시즌 드래프트에 다시 참가합니다.</p>` : `
+      <p class="renewal-club">${domesticTeams[team]} · ${round}라운드 지명 · 2군</p>
+      <dl class="terms">
+        <div><dt>계약금</dt><dd>${money(bonus)}</dd></div>
+        <div><dt>첫 시즌 연봉</dt><dd>${money(salary)}</dd></div>
+        ${status==="open" || status==="counter" ? `<div><dt>답변 마감</dt><dd>${date(draftDeadline(season))}</dd></div>` : ""}
+        ${status==="pending" ? `<div><dt>입단 예정</dt><dd>${date(draftRegistration(season))}</dd></div>` : ""}
+        ${draft.represented ? `<div><dt>${status==="registered"?"수수료 입금 완료":"등록 시 수수료"}</dt><dd>${money(draftFee(draft))}</dd></div>` : ""}
+      </dl>
+      ${status==="counter" ? `<p class="small">계약금 20% 인상 요청 · ${date(draft.replyWeek!)} 회신 예정</p>` : ""}
+      ${status==="open" ? `
+        ${counter==="accepted" || counter==="rejected" ? `<p class="small">${counter==="accepted"?"구단이 계약금 인상을 받아들였습니다.":"구단이 기존 계약금 조건을 유지했습니다."}</p>` : ""}
+        <div class="renewal-actions">${button("신인 계약 확정","draft-accept",attrs,false,"primary")}
+        ${counter==="unused" && state.week<draftDeadline(season) ? button("계약금 +20% 역제안","draft-counter",attrs,false,"secondary") : ""}</div>` : ""}`}
+  </section>`;
+}
 function dealsPage():string {
   const {offers,contract}=state.clubDeals;
   const eligible=state.clients.includes(freeAgentId);
   const labels={waiting:"구단 회신 대기",open:"응답 가능",counter:"역제안 회신 대기",expired:"기한 만료",closed:"다른 구단 계약으로 종료",accepted:"계약 확정"};
   const player=players.find(player=>player.id===freeAgentId)!;
   return `<header class="page-title"><h1>구단 협상</h1></header>
+    ${draftNegotiation()}
     ${domesticNegotiation()}
-    ${state.domestic.renewals.length ? '<div class="section-title overseas-title"><h2>해외 구단</h2></div>' : ""}
+    ${state.domestic.renewals.length || state.domestic.draft && state.clients.includes(prospectId) ? '<div class="section-title overseas-title"><h2>해외 구단</h2></div>' : ""}
     <div class="player-pass">${playerCard(player,eligible?"담당 고객":"협상 대상")}</div>
     <p class="contract-strip">선발 선호 · 불펜 희망 연봉 2억 4,500만 원 이상</p>
     ${contract ? `<section class="deal-card"><p class="deadline">${contract.status==="pending" ? "등록 대기 · "+contract.registrationWeek+"주차 등록 예정" : "등록 완료"}</p>
@@ -275,7 +342,7 @@ function report():string {
     <article class="paper" aria-label="스카우트 보고서" id="paper" tabindex="-1">
       ${player ? `<div class="player-hero">${portrait(player,"hero-portrait")}
         <div class="player-name"><p>${escape(player.position)}</p><h1>${escape(player.name)}</h1>${playerLine(player)}</div></div>
-        <div class="report-body"><section><h2>관찰 기록</h2><p class="record">${escape(player.line)}</p><p class="small">${player.id===domesticPlayer && (player.line.includes("타율") || player.appearances===0)?"해당 시즌 누적":"조사 당시 기록"} · 출전량 ${player.appearances}${player.position.includes("투수")?"아웃":"타석"}</p>
+        <div class="report-body"><section><h2>관찰 기록</h2><p class="record">${escape(player.line)}</p><p class="small">${(player.id===domesticPlayer || player.id===prospectId) && (player.line.includes("타율") || player.line.includes("평균자책") || player.appearances===0)?"해당 시즌 누적":"조사 당시 기록"} · 출전량 ${player.appearances}${player.position.includes("투수")?"아웃":"타석"}</p>
           <dl class="estimate"><div><dt>현재 실력 추정</dt><dd>${Math.max(1,player.ability-(item.playerId?2:4))}–${player.ability+(item.playerId?2:4)}</dd></div>
           <div><dt>잠재력 추정</dt><dd>${candidate.low}–${candidate.high}</dd></div></dl>
           </section>
@@ -291,6 +358,18 @@ function report():string {
       <span aria-live="polite">${item.page+1} / ${Math.max(1,item.candidates.length)}</span>
       ${button("다음 장","next","",item.page>=item.candidates.length-1,"quiet")}</div></div>`;
 }
+function finance():string {
+  const {openingBalance,entries}=state.cashbook;
+  return `<header class="page-title"><h1>운영 장부</h1></header>
+    <section class="finance-balance"><span>현재 잔액</span><strong>${money(state.money)}</strong></section>
+    <section aria-labelledby="cashflow-title"><div class="section-title"><h2 id="cashflow-title">최근 거래</h2></div>
+      ${entries.length ? `<ul class="cashflow">${entries.slice().reverse().map(entry=>
+        `<li><div><strong>${escape(entry.label)}</strong><small>${entry.week}주차 · ${date(entry.week)}</small></div>
+          <b class="${entry.amount>0?"income":"expense"}">${entry.amount>0?"+":"−"}${money(Math.abs(entry.amount))}</b></li>`).join("")}</ul>`
+        : '<p class="empty">파견비를 지출하거나 계약 수수료를 받으면 여기에 표시됩니다.</p>'}
+      <p class="small">표시 기간 시작 잔액 ${money(openingBalance)}</p>
+    </section>`;
+}
 function render():void {
   root.innerHTML = `<div class="shell"><div class="feedback" role="${error?"alert":"status"}" ${error||notice?"":"hidden"}>${escape(error||notice)}</div>
     ${!started ? `<main class="welcome"><header class="title-lockup"><span class="club-mark" aria-hidden="true"></span><h1>콜업</h1><p>야구 에이전시</p></header>
@@ -301,8 +380,9 @@ function render():void {
       `<form id="start"><label for="agency">에이전시 이름</label><input id="agency" name="agency" required maxlength="24" value="콜업 에이전시" autocomplete="organization">
       <button class="primary full" ${recovery?"disabled":""}>사무실 열기</button></form>`}</div></main>` :
       reportId ? report() : `<header class="masthead">${button("<span class='club-mark' aria-hidden='true'></span>","title",'aria-label="타이틀로 돌아가기"',false,"brand-button")}<div><b>${escape(state.agency)}</b><small>${weekDate(state.week).getUTCFullYear()} · ${state.week}주차</small></div>
-      <div class="balance"><small>운영 자금</small><b>${money(state.money)}</b></div></header>
-      <main id="content" tabindex="-1">${({office,players:myPlayers,scout,market:marketPage,deals:dealsPage})[tab]()}</main>
+      ${button(`<small>${tab==="finance"?"이전 화면 ‹":"운영 자금 ›"}</small><b>${money(state.money)}</b>`,
+        "finance",'',false,"balance")}</header>
+      <main id="content" tabindex="-1">${({office,players:myPlayers,scout,market:marketPage,deals:dealsPage,finance})[tab]()}</main>
       <footer class="dock"><div class="progress-row"><select aria-label="진행할 주 수" id="weeks" ${hasPendingDecision(state)?"disabled":""}>
         <option value="1">1주</option><option value="4">최대 4주</option></select>${button("다음 주 진행","advance","",busy,"primary")}</div>
       <nav aria-label="주요 화면">${([["office","사무실"],["players","내 선수"],["scout","스카우트"],["market","시장"],["deals","협상"]] as const)
@@ -350,11 +430,28 @@ root.addEventListener("click",async event=>{
     switch(action) {
       case "continue": started=true; tab="office"; break;
       case "title": started=false; break;
+      case "finance":
+        if (tab==="finance") tab=financeBack;
+        else {financeBack=tab; tab="finance";}
+        break;
       case "tab":
         tab=target.dataset.tab as Tab;
         if (target.dataset.market) market=target.dataset.market as Market;
         break;
       case "season-view": showLastSeason=id==="previous"; break;
+      case "support-talk":
+      case "support-coach":
+        await execute({type:action,playerId:id});
+        notice="선수 지원을 예약했습니다.";
+        break;
+      case "draft-counter":
+        await execute({type:"draft-counter",season:Number(id)});
+        notice="계약금 역제안을 보냈습니다. 다음 주에 답변이 옵니다.";
+        break;
+      case "draft-accept":
+        await execute({type:"draft-accept",season:Number(id)});
+        notice="신인 계약을 확정했습니다. 다음 시즌에 등록합니다.";
+        break;
       case "renewal-counter":
         await execute({type:"renewal-counter",season:Number(id),raise:Number(target.dataset.raise) as 10|25});
         notice="역제안을 보냈습니다. 다음 주에 답변이 옵니다.";
@@ -427,7 +524,7 @@ root.addEventListener("click",async event=>{
     busy=false;
     render();
     if (["region","tier","market-view","season-view"].includes(action!)) root.querySelector<HTMLButtonElement>(`[data-action="${action}"][aria-pressed="true"]`)?.focus({preventScroll:true});
-    if (["league","introduction","tab","report","close","next","prev","continue","title","advance"].includes(action!)) {
+    if (["finance","league","introduction","tab","report","close","next","prev","continue","title","advance"].includes(action!)) {
       root.querySelector<HTMLElement>(reportId?"#paper":"#content")?.focus({preventScroll:true});
       window.scrollTo(0,0);
     }
@@ -448,6 +545,7 @@ root.addEventListener("pointerup",event=>{
 root.addEventListener("pointercancel",()=>{swipe=null;});
 window.addEventListener("callup-back",()=>{
   if (reportId) root.querySelector<HTMLButtonElement>('[data-action="close"]')?.click();
+  else if (tab==="finance") root.querySelector<HTMLButtonElement>('[data-action="finance"]')?.click();
   else {tab="office"; render();}
 });
 render();

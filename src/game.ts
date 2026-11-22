@@ -1,4 +1,7 @@
-import {advanceRenewals, applyRenewal, battingLine, calendar, domesticTeams, domesticPlayer, koreaSeason, schedulePromotion, tierAt, validateRenewals, type Domestic, type RenewalCommand} from "./korea.js";
+import {advanceSupport, applySupport, validateSupport, type SupportCase, type SupportCommand} from "./support.js";
+import {recordCash, validateCashbook, type Cashbook} from "./cashbook.js";
+import {advanceDraft, applyDraft, prospectId, validateDraft, type DraftCommand} from "./draft.js";
+import {advanceRenewals, applyRenewal, battingLine, calendar, domesticTeams, domesticPlayer, koreaSeason, pitchingLine, schedulePromotion, tierAt, validateRenewals, type Domestic, type RenewalCommand} from "./korea.js";
 import {advanceClubDeals, applyClubDeal, validateClubDeals,
   type ClubDeals, type DealCommand} from "./club-deals.js";
 
@@ -44,9 +47,11 @@ export interface State {
   missions:Mission[]; reports:Report[]; interests:string[]; clients:string[];
   meetings:{playerId:string; due:number}[]; matters:Matter[]; summaries:Summary[];
   domestic:Domestic;
+  cashbook:Cashbook;
+  support:SupportCase[];
   clubDeals:ClubDeals;
 }
-export type Command = DealCommand | RenewalCommand
+export type Command = DealCommand | RenewalCommand | DraftCommand | SupportCommand
   | {type:"introduction"}
   | {type:"dispatch"; market:Market}
   | {type:"follow-up"; playerId:string}
@@ -60,9 +65,10 @@ export const missionCost = (market:Market) => market === "한국" ? 500000 : 120
 export const missionWeeks = (market:Market) => market === "한국" ? 2 : 3;
 
 export function createState(agency = "콜업 에이전시", seed = 20261119):State {
+  const money=15000000;
   return {version:1,seed,week:1,agency:agency.trim().slice(0,24) || "콜업 에이전시",
-    money:15000000,nextId:1,missions:[],reports:[],interests:[],clients:[],meetings:[],matters:[],
-    domestic:{firstWeek:2,promotionWeek:null,renewals:[]}, clubDeals:{offers:[],contract:null},
+    money,support:[],cashbook:{openingBalance:money,entries:[]},nextId:1,missions:[],reports:[],interests:[],clients:[],meetings:[],matters:[],
+    domestic:{firstWeek:2,promotionWeek:null,renewals:[],draft:null}, clubDeals:{offers:[],contract:null},
     summaries:[{week:1,text:"창업 첫 주입니다. 국내외 조사 지역을 정하고 첫 파견을 준비하세요."}]};
 }
 function requirePlayer(id:string):Player {
@@ -77,6 +83,14 @@ export function act(current:State, command:Command):State {
     case "counter":
     case "accept-offer":
       applyClubDeal(state,command);
+      break;
+    case "support-talk":
+    case "support-coach":
+      applySupport(state,command);
+      break;
+    case "draft-counter":
+    case "draft-accept":
+      applyDraft(state,command);
       break;
     case "renewal-counter":
     case "renewal-accept":
@@ -96,7 +110,7 @@ export function act(current:State, command:Command):State {
       if (!markets.includes(command.market)) throw new Error("조사 지역을 선택하세요.");
       if (state.missions.length) throw new Error("파견 중인 스카우트가 돌아오면 다시 보낼 수 있습니다.");
       if (state.money < missionCost(command.market)) throw new Error("파견 비용이 부족합니다.");
-      state.money -= missionCost(command.market);
+      recordCash(state,-missionCost(command.market),command.market+" 스카우트 파견");
       state.missions.push({id:"report-"+state.nextId++,market:command.market,sent:state.week,
         due:state.week+missionWeeks(command.market)});
       break;
@@ -107,7 +121,7 @@ export function act(current:State, command:Command):State {
         throw new Error("먼저 지역 파견에서 선수를 관찰하세요.");
       if (state.missions.length) throw new Error("스카우트가 복귀하면 추가 조사를 보낼 수 있습니다.");
       if (state.money<followUpCost) throw new Error("추가 조사 비용이 부족합니다.");
-      state.money-=followUpCost;
+      recordCash(state,-followUpCost,player.name+" 추가 조사");
       state.missions.push({id:"report-"+state.nextId++,market:player.market,playerId:player.id,sent:state.week,due:state.week+1});
       break;
     }
@@ -156,6 +170,16 @@ function draw(seed:number, week:number, salt:number):number {
   return (value >>> 0) / 4294967296;
 }
 export function currentProfile(state:State, player:Player):Player {
+  if (player.id===prospectId) {
+    const draft=state.domestic.draft;
+    if (draft?.status==="registered" && draft.team!==null) {
+      const {pitching}=koreaSeason(state.seed,state.week,state.domestic,"2군");
+      return {...player,club:domesticTeams[draft.team],level:"2군",
+        line:pitching.outs ? pitchingLine(pitching) : "이번 시즌 등판 전",appearances:pitching.outs};
+    }
+    if (draft?.team!=null && ["open","counter","pending"].includes(draft.status))
+      return {...player,club:domesticTeams[draft.team],level:"지명",line:player.line};
+  }
   if (player.id!==domesticPlayer) return player;
   const level=tierAt(state.domestic,state.week);
   const {batting}=koreaSeason(state.seed,state.week,state.domestic,level);
@@ -202,10 +226,13 @@ export function step(current:State):{state:State; important:boolean} {
   }
   const clubNews=advanceClubDeals(state);
   notes.push(...clubNews);
+  const draftNews=advanceDraft(state,draw(state.seed,state.week,7));
+  if (draftNews) notes.push(draftNews);
   const renewal=advanceRenewals(state.seed,state.week,state.domestic,state.clients.includes(domesticPlayer));
-  state.money+=renewal.fee;
-  notes.push(...renewal.notes);
-  important ||= clubNews.length>0 || renewal.notes.length>0;
+  recordCash(state,renewal.fee,"서도윤 연봉 계약 수수료");
+  const supportNews=advanceSupport(state);
+  notes.push(...renewal.notes,...supportNews);
+  important ||= clubNews.length>0 || renewal.notes.length>0 || draftNews!=="" || supportNews.length>0;
   if (calendar(state.week).phase==="정규시즌") {
     const latest=koreaSeason(state.seed,state.week,state.domestic,"1군").games.at(-1);
     if (latest) notes.push(`국내 1군 · ${domesticTeams[0]} ${latest.runs[0]} : ${latest.runs[1]} ${domesticTeams[1]}`);
@@ -216,8 +243,9 @@ export function step(current:State):{state:State; important:boolean} {
   return {state,important};
 }
 export function hasPendingDecision(state:State):boolean {
-  return state.matters.some(item=>!item.done) || state.clubDeals.offers.some(offer=>offer.status==="open") ||
-    state.domestic.renewals.at(-1)?.status==="open";
+  return state.support.some(item=>item.status==="open") || state.matters.some(item=>!item.done) || state.clubDeals.offers.some(offer=>offer.status==="open") ||
+    state.domestic.renewals.at(-1)?.status==="open" ||
+    (state.domestic.draft?.status==="open" && state.clients.includes(prospectId));
 }
 
 export function advance(current:State, count:number):State[] {
@@ -271,7 +299,7 @@ export function parseSave(text:string):State {
         !players.some(player=>player.id===item.playerId)) ||
       state.summaries.some(item=>!Number.isSafeInteger(item.week) || typeof item.text!=="string"))
     throw new Error("저장된 업무 이력이 손상되었습니다.");
-  if (state.domestic===undefined) state.domestic={firstWeek:state.week+1,promotionWeek:null,renewals:[]};
+  if (state.domestic===undefined) state.domestic={firstWeek:state.week+1,promotionWeek:null,renewals:[],draft:null};
   const d=state.domestic;
   if (!d || !Number.isSafeInteger(d.firstWeek) || d.firstWeek<1 || d.firstWeek>state.week+1 ||
       (d.promotionWeek!==null && (!Number.isSafeInteger(d.promotionWeek) || d.promotionWeek<=d.firstWeek || d.promotionWeek>state.week+1)))
@@ -284,5 +312,8 @@ export function parseSave(text:string):State {
   }
   validateRenewals(state.domestic,state.seed,state.week,state.clients.includes(domesticPlayer));
   validateClubDeals(state);
+  validateDraft(state);
+  validateCashbook(state);
+  validateSupport(state);
   return state;
 }

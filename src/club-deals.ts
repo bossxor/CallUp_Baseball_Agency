@@ -1,3 +1,4 @@
+import {recordCash} from "./cashbook.js";
 import type {State} from "./game.js";
 
 // shortcut: one eligible free agent and fixed club needs until the roster simulation drives the market.
@@ -105,7 +106,7 @@ export function advanceClubDeals(state:State):string[] {
     checkCapacity(contract.clubId,contract.salary);
     if (!state.clients.includes(freeAgentId)) throw new Error("등록할 선수의 에이전시 계약을 확인하세요.");
     contract.status="registered";
-    state.money+=contract.fee;
+    recordCash(state,contract.fee,clubs[contract.clubId].name+" 계약 수수료");
     notes.push(clubs[contract.clubId].name+" 등록 완료. 에이전시 수수료가 입금됐습니다.");
   }
   return notes;

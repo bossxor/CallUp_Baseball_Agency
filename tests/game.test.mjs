@@ -229,3 +229,155 @@ test("renewal preserves baseline after an ambitious counter and respects the dea
   delete state.domestic.renewals;
   assert.deepEqual(parseSave(JSON.stringify(state)).domestic.renewals,[]);
 });
+
+test("drafted customer negotiates the signing bonus, joins the second team, and pays once",()=>{
+  let state=createState();
+  state.clients.push("kr-2");
+  while(state.week<33) state=step(state).state;
+  assert.throws(()=>act(state,{type:"draft-accept",season:1}));
+  state=advance(state,4).at(-1);
+  assert.equal(state.week,34);
+  assert.equal(state.domestic.draft.status,"open");
+  assert.equal(advance(state,4).length,1);
+  const terms=state.domestic.draft;
+  const initial=state.money;
+  state=act(state,{type:"draft-counter",season:1});
+  assert.throws(()=>act(state,{type:"draft-accept",season:1}));
+  state=advance(parseSave(JSON.stringify(state)),4).at(-1);
+  assert.equal(state.week,35);
+  assert.equal(state.domestic.draft.status,"open");
+  assert.equal(state.domestic.draft.counter,terms.round===1?"accepted":"rejected");
+  assert.throws(()=>act(state,{type:"draft-counter",season:1}));
+  const accept={type:"draft-accept",season:1};
+  state=act(state,accept);
+  assert.deepEqual(act(state,accept),state);
+  while(state.week<52) state=step(state).state;
+  assert.equal(state.money,initial);
+  state=step(parseSave(JSON.stringify(state))).state;
+  assert.equal(state.domestic.draft.status,"registered");
+  assert.equal(state.money,initial+Math.floor((state.domestic.draft.bonus+state.domestic.draft.salary)/20));
+  assert.equal(step(parseSave(JSON.stringify(state))).state.money,state.money);
+  const broken=structuredClone(state);
+  broken.domestic.draft.bonus++;
+  assert.throws(()=>parseSave(JSON.stringify(broken)),/드래프트/);
+});
+
+test("an unsigned prospect can re-enter and an unrepresented signing earns no fee",()=>{
+  let fresh=createState();
+  const money=fresh.money;
+  for(let i=1;i<53;i++) fresh=step(fresh).state;
+  assert.equal(fresh.domestic.draft.status,"registered");
+  assert.equal(fresh.money,money);
+  let state=createState();
+  state.clients.push("kr-2");
+  while(state.week<38) state=step(state).state;
+  assert.equal(state.domestic.draft.status,"expired");
+  assert.throws(()=>act(state,{type:"draft-accept",season:1}));
+  while(state.week<86) state=step(state).state;
+  assert.equal(state.domestic.draft.season,2);
+  assert.ok(["open","undrafted"].includes(state.domestic.draft.status));
+  if(state.domestic.draft.status==="open") assert.throws(()=>act(state,{type:"draft-accept",season:1}));
+  const legacy=createState();
+  delete legacy.domestic.draft;
+  assert.equal(parseSave(JSON.stringify(legacy)).domestic.draft,null);
+});
+
+test("registered rookie pitching and club scores come from the same second-team fixtures",async()=>{
+  const {koreaSeason}=await import("../dist/korea.js");
+  const {currentProfile,players}=await import("../dist/game.js");
+  let state=createState();
+  state.clients.push("kr-2");
+  while(state.week<34) state=step(state).state;
+  state=act(state,{type:"draft-accept",season:1});
+  while(state.week<56) state=step(state).state;
+  state=parseSave(JSON.stringify(state));
+  const stats=koreaSeason(state.seed,state.week,state.domestic,"2군");
+  const pitching=stats.pitching;
+  assert.equal(pitching.outs,6);
+  assert.equal(pitching.runs,stats.games[0].pitching.runs);
+  assert.ok(pitching.runs<=stats.games[0].runs[1-state.domestic.draft.team]);
+  assert.ok(pitching.strikeouts<=pitching.outs);
+  assert.equal(koreaSeason(state.seed,state.week,state.domestic,"1군").pitching.outs,0);
+  assert.equal(koreaSeason(state.seed,33,state.domestic,"2군").pitching.outs,0);
+  const p=currentProfile(state,players.find(player=>player.id==="kr-2"));
+  assert.equal(p.level,"2군");
+  assert.equal(p.appearances,pitching.outs);
+  assert.match(p.line,/2이닝.*평균자책/);
+});
+
+test("cashbook reconciles scouting costs and simultaneous domestic commissions after reload",()=>{
+  let state=act(createState(),{type:"dispatch",market:"한국"});
+  assert.equal(state.cashbook.entries[0].amount,-500000);
+  assert.throws(()=>act(state,{type:"dispatch",market:"미국"}));
+  state.clients.push("kr-1","kr-2");
+  while(state.week<36) state=step(state).state;
+  state=act(state,{type:"draft-accept",season:1});
+  state=act(state,{type:"renewal-accept",season:1});
+  while(state.week<53) state=step(state).state;
+  const restored=parseSave(JSON.stringify(state));
+  const rows=restored.cashbook.entries;
+  assert.equal(rows.filter(row=>row.week===53 && row.amount>0).length,2);
+  assert.equal(restored.cashbook.openingBalance+rows.reduce((total,row)=>total+row.amount,0),state.money);
+  const corrupt=structuredClone(state);
+  corrupt.cashbook.entries[0].amount+=1;
+  assert.throws(()=>parseSave(JSON.stringify(corrupt)),/장부/);
+  delete state.cashbook;
+  assert.deepEqual(parseSave(JSON.stringify(state)).cashbook,{openingBalance:state.money,entries:[]});
+});
+
+test("client role changes open one support case and coaching charges once across reloads",()=>{
+  let state=createState();
+  state.clients.push("kr-1");
+  assert.throws(()=>act(state,{type:"support-coach",playerId:"kr-1"}));
+  while(!state.domestic.promotionWeek || state.week<state.domestic.promotionWeek) state=step(state).state;
+  const playerId="kr-1";
+  const money=state.money;
+  assert.equal(state.support[0].status,"open");
+  assert.equal(advance(state,4).length,1);
+  let expired=state;
+  while(expired.week<=state.support[0].deadline) expired=step(expired).state;
+  assert.equal(expired.support[0].status,"expired");
+  assert.equal(expired.money,money);
+  const poor={...state,money:0};
+  assert.throws(()=>act(poor,{type:"support-coach",playerId}));
+  const free=act(state,{type:"support-talk",playerId});
+  assert.equal(free.money,money);
+  assert.equal(step(free).state.support[0].status,"done");
+  state=act(state,{type:"support-coach",playerId});
+  assert.throws(()=>act(state,{type:"support-coach",playerId}));
+  assert.equal(state.money,money-400000);
+  const weeks=advance(parseSave(JSON.stringify(state)),4);
+  assert.equal(weeks.length,2);
+  state=weeks.at(-1);
+  assert.equal(state.support[0].status,"done");
+  assert.match(state.support[0].report,/외부 코치/);
+  assert.equal(state.cashbook.entries.filter(entry=>entry.amount===-400000).length,1);
+  assert.deepEqual(parseSave(JSON.stringify(state)),state);
+});
+
+test("second-round counter preserves the opening bonus and a missed pick does not create an offer",()=>{
+  const atDraft=seed=>{
+    let state=createState("QA",seed);
+    state.clients.push("kr-2");
+    while(state.week<34) state=step(state).state;
+    return state;
+  };
+  const late=atDraft(2);
+  assert.equal(late.domestic.draft.round,2);
+  const reply=step(act(late,{type:"draft-counter",season:1})).state;
+  assert.equal(reply.domestic.draft.counter,"rejected");
+  assert.equal(reply.domestic.draft.bonus,late.domestic.draft.bonus);
+  const undrafted=atDraft(3);
+  assert.equal(undrafted.domestic.draft.status,"undrafted");
+  assert.equal(undrafted.domestic.draft.team,null);
+  assert.throws(()=>act(undrafted,{type:"draft-accept",season:1}));
+});
+
+test("cashbook keeps its opening balance when transactions roll out of view",async()=>{
+  const {recordCash}=await import("../dist/cashbook.js");
+  const state=createState();
+  for(let i=0;i<53;i++) recordCash(state,-1000,"테스트 거래");
+  assert.equal(state.cashbook.entries.length,50);
+  assert.equal(state.cashbook.openingBalance,14997000);
+  assert.equal(parseSave(JSON.stringify(state)).money,14947000);
+});

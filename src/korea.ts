@@ -1,8 +1,11 @@
+import type {Draft} from "./draft.js";
+
 export type Tier = "1군" | "2군";
 export interface Domestic {
   firstWeek:number;
   promotionWeek:number|null;
   renewals:Renewal[];
+  draft:Draft;
 }
 const renewalStatuses=["open","counter","pending","registered","declined","expired"] as const;
 interface Renewal {
@@ -22,6 +25,8 @@ export const domesticPlayer = "kr-1";
 export const domesticTeams = ["인천 웨이브스", "수원 레일스"] as const;
 const emptyBatting = () => ({pa:0, hits:0, walks:0, bases:0});
 type Batting = ReturnType<typeof emptyBatting>;
+const emptyPitching = () => ({outs:0, hits:0, walks:0, strikeouts:0, runs:0});
+type Pitching = ReturnType<typeof emptyPitching>;
 
 export function calendar(week:number) {
   const round=(week-1)%52+1;
@@ -31,7 +36,7 @@ export function calendar(week:number) {
 export const tierAt = (domestic:Domestic, week:number):Tier =>
   domestic.promotionWeek!==null && domestic.promotionWeek<=week ? "1군" : "2군";
 
-function game(seed:number, week:number, tier:Tier, playerTier:Tier) {
+function game(seed:number, week:number, tier:Tier, playerTier:Tier, rookieTeam:0|1|null) {
   let rng=(seed ^ Math.imul(week,2654435761) ^ (tier==="1군"?7349:9127))>>>0;
   const random=() => {
     rng=(Math.imul(rng,1664525)+1013904223)>>>0;
@@ -40,10 +45,14 @@ function game(seed:number, week:number, tier:Tier, playerTier:Tier) {
   const runs=[0,0];
   const nextBatter=[0,0];
   const batting=emptyBatting();
+  const pitching=emptyPitching();
   const home=week%2;
   for (let inning=1; inning<=9; inning++) {
     for (const team of [1-home,home]) {
       if (inning===9 && team===home && runs[home]>runs[1-home]) break;
+      // shortcut: the rookie covers the seventh and eighth until teams have a bullpen rotation.
+      const rookiePitching=rookieTeam!==null && team!==rookieTeam && (inning===7 || inning===8);
+      const runsBefore=runs[team];
       let outs=0;
       const occupied=[false,false,false];
       while (outs<3) {
@@ -51,13 +60,14 @@ function game(seed:number, week:number, tier:Tier, playerTier:Tier) {
         nextBatter[team]=(nextBatter[team]+1)%9;
         const roll=random();
         if (tracked) batting.pa++;
-        if (roll<.08) {
+        if (roll<(rookiePitching ? .09 : .08)) {
           // Only forced runners advance on a walk.
           const empty=occupied.indexOf(false);
           if (empty===-1) runs[team]++;
           else occupied[empty]=true;
           if (tracked) batting.walks++;
-        } else if (roll<(tracked && tier==="2군" ? .38 : .32)) {
+          if (rookiePitching) pitching.walks++;
+        } else if (roll<(tracked && tier==="2군" ? .38 : rookiePitching ? .30 : .32)) {
           const distance=roll<.099 ? 4 : roll<.15 ? 2 : 1;
           for (let base=2;base>=0;base--) {
             if (!occupied[base]) continue;
@@ -68,22 +78,33 @@ function game(seed:number, week:number, tier:Tier, playerTier:Tier) {
           if (distance===4) runs[team]++;
           else occupied[distance-1]=true;
           if (tracked) { batting.hits++; batting.bases+=distance; }
-        } else outs++;
+          if (rookiePitching) pitching.hits++;
+        } else {
+          outs++;
+          if (rookiePitching && roll>=.78) pitching.strikeouts++;
+        }
         if (inning===9 && team===home && runs[home]>runs[1-home]) break;
+      }
+      if (rookiePitching) {
+        pitching.outs+=outs;
+        pitching.runs+=runs[team]-runsBefore;
       }
     }
   }
-  return {week, runs, batting};
+  return {week, runs, batting, pitching};
 }
 
 export function koreaSeason(seed:number, week:number, domestic:Domestic, tier:Tier) {
   const games=[];
   const wins=[0,0];
   const batting=emptyBatting();
+  const pitching=emptyPitching();
+  const draft=domestic.draft;
   let draws=0;
   const start=week-calendar(week).round+1;
   for (let played=Math.max(start+3,domestic.firstWeek);played<=Math.min(start+32,week);played++) {
-    const result=game(seed,played,tier,tierAt(domestic,played));
+    const rookieTeam=tier==="2군" && draft?.status==="registered" && played>=renewalRegistration(draft.season) ? draft.team : null;
+    const result=game(seed,played,tier,tierAt(domestic,played),rookieTeam);
     games.push(result);
     if (result.runs[0]===result.runs[1]) draws++;
     else wins[result.runs[0]>result.runs[1]?0:1]++;
@@ -91,14 +112,22 @@ export function koreaSeason(seed:number, week:number, domestic:Domestic, tier:Ti
     batting.walks+=result.batting.walks;
     batting.hits+=result.batting.hits;
     batting.bases+=result.batting.bases;
+    for (const key of ["outs","hits","walks","strikeouts","runs"] as const) pitching[key]+=result.pitching[key];
   }
-  return {games, wins, draws, batting};
+  return {games, wins, draws, batting, pitching};
 }
 
 export function battingLine(b:Batting):string {
   const ab=b.pa-b.walks;
   const rate=(n:number,d:number)=>d ? (n/d).toFixed(3).replace(/^0/,"") : "—";
   return `${b.pa}타석 · ${b.hits}안타 · 타율 ${rate(b.hits,ab)} · 출루율 ${rate(b.hits+b.walks,b.pa)} · 장타율 ${rate(b.bases,ab)}`;
+}
+
+export function pitchingLine(p:Pitching):string {
+  const remainder=p.outs%3;
+  const innings=Math.floor(p.outs/3)+(remainder?" "+remainder+"/3":"");
+  const era=p.outs ? (p.runs*27/p.outs).toFixed(2) : "—";
+  return `${innings}이닝 · ${p.strikeouts}탈삼진 · ${p.walks}볼넷 · 평균자책 ${era}`;
 }
 
 export function schedulePromotion(seed:number, week:number, domestic:Domestic):void {
