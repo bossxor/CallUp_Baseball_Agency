@@ -1,13 +1,13 @@
 # Phase B gate notes
 
-**빌드:** `CallUp-Prototype.apk` · `com.callup.agency` · `0.1.0-callup.15` (versionCode 130)  
+**빌드:** `CallUp-Prototype.apk` · `com.callup.agency` · `0.1.0-callup.16` (versionCode 131)  
 **일자:** 2026-11-23  
 **세이브:** B1 (`callupBaseball1`) · 포지션 풀 9
 
 ## 상태 요약
 
-오프라인 Phase B 퍼지·광고제거·카피 최종 정리까지 완료.  
-실기기 잔여(4주·재로드·구세이브 거부)만 남음.
+오프라인 Phase B + 카피 추가 퍼지(A매치/윙어/자책골/도움 라벨 등)까지 완료.  
+실기기 잔여(4주·재로드·구세이브 거부) + 대형 후속(구단 DB·시뮬 심화·Phase C) 남음.
 
 ## §8 게이트
 

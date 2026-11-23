@@ -56,6 +56,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-purge-copy-final2 failed' }
     node (Join-Path $PSScriptRoot 'fix-purge-kickoff.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-purge-kickoff failed' }
+    node (Join-Path $PSScriptRoot 'fix-purge-more.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-purge-more failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }
