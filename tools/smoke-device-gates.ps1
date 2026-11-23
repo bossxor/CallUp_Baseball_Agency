@@ -21,7 +21,12 @@ function Tap($x,$y,$ms=900){ adb -s $dev shell input tap $x $y | Out-Null; Start
 function Swipe($x1,$y1,$x2,$y2,$d=350){ adb -s $dev shell input swipe $x1 $y1 $x2 $y2 $d | Out-Null; Start-Sleep -Milliseconds 500 }
 function Lay {
   $p = Join-Path $out '_dg.json'
-  android layout --device=$dev --flat -o $p 2>$null | Out-Null
+  try {
+    & android layout --device=$dev --flat -o $p 2>$null | Out-Null
+  } catch {
+    Start-Sleep -Milliseconds 800
+    try { & android layout --device=$dev --flat -o $p 2>$null | Out-Null } catch {}
+  }
   if (-not (Test-Path $p)) { return '' }
   Get-Content $p -Raw -Encoding UTF8
 }
