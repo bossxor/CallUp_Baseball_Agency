@@ -48,6 +48,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-labels-purge3 failed' }
     node (Join-Path $PSScriptRoot 'fix-shooting-narrative.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-shooting-narrative failed' }
+    node (Join-Path $PSScriptRoot 'fix-kill-ad-popup.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-kill-ad-popup failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }
