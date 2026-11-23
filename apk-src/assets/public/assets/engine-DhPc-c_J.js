@@ -56,7 +56,7 @@ function offlineSetAbility(player, target) {
   player.ovrM = player.ovr;
 }
 
-function callupAssertBaseball(game){var a=game&&game.agency,ps=game&&game.players||{},ok={P:1,C:1,"1B":1,"2B":1,"3B":1,SS:1,LF:1,CF:1,RF:1},k,p,n=0;if(!a)return;for(k in ps){p=ps[k];if(!p)continue;n++;if(p.pos&&!ok[p.pos])throw new Error("콜업 야구 세이브만 지원합니다. 새 게임을 시작하세요.");}if(a.callupBaseball1!==true&&a.callupBaseball1!==1){if(n>0)throw new Error("콜업 야구 세이브만 지원합니다. 새 게임을 시작하세요.");a.callupBaseball1=true;}}function offlineCheat(game, action, id, values, currency = "EUR") {
+function callupAssertBaseball(game){var a=game&&game.agency,ps=game&&game.players||{},ok={P:1,C:1,"1B":1,"2B":1,"3B":1,SS:1,LF:1,CF:1,RF:1},map={ST:"RF",CF:"CF",LW:"LF",RW:"RF",CAM:"SS",CM:"2B",CDM:"3B",LM:"LF",RM:"RF",LB:"3B",RB:"1B",CB:"C",GK:"P",FW:"RF",MF:"2B",DF:"3B"},stamped=!!(a&&(a.callupBaseball1===true||a.callupBaseball1===1)),k,p,n=0,soccer=0;if(!a)return;for(k in ps){p=ps[k];if(!p)continue;n++;if(p.pos&&!ok[p.pos]){if(stamped){p.pos=map[p.pos]||"RF";}else if(map[p.pos]){soccer++;}else throw new Error("콜업 야구 세이브만 지원합니다. 새 게임을 시작하세요.");}}if(!stamped){if(soccer>0)throw new Error("콜업 야구 세이브만 지원합니다. 새 게임을 시작하세요.");a.callupBaseball1=true;}}function offlineCheat(game, action, id, values, currency = "EUR") {
   const number = (key, low, high) => {
     const raw = values.get(key), value = Number(raw);
     if (raw == null || raw === "" || !Number.isFinite(value) || value < low || value > high)

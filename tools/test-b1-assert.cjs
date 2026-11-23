@@ -41,16 +41,27 @@ expectOk("marked baseball", {
   agency: { callupBaseball1: true },
   players: { 1: { pos: "P" }, 2: { pos: "SS" } },
 });
-expectThrow("legacy soccer pos", {
+// stamped: remap leftover soccer codes
+expectOk("stamped remap GK", {
   agency: { callupBaseball1: true },
   players: { 1: { pos: "GK" } },
 });
-expectThrow("no marker with players", {
+expectOk("stamped remap FW", {
+  agency: { callupBaseball1: 1 },
+  players: { 1: { pos: "FW" } },
+});
+// unstamped baseball-only → auto stamp
+expectOk("unstamped baseball pos", {
   agency: {},
   players: { 1: { pos: "P" } },
 });
-expectThrow("FW leftover", {
-  agency: { callupBaseball1: 1 },
-  players: { 1: { pos: "FW" } },
+// unstamped + soccer → reject
+expectThrow("unstamped soccer GK", {
+  agency: {},
+  players: { 1: { pos: "GK" } },
+});
+expectThrow("unstamped soccer ST", {
+  agency: {},
+  players: { 1: { pos: "ST" } },
 });
 console.log("B1 assert unit PASS");

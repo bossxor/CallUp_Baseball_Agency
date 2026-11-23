@@ -41,17 +41,21 @@ function Texts([string]$j) {
 }
 function Has($arr,$pat){ ($arr | Where-Object { $_ -match $pat }).Count -gt 0 }
 function FindCenter([string]$j, [string]$want) {
-  # exact, then contains
+  # android CLI: center may be "x,y" or "[x,y]"; also match content-desc
+  $esc = [regex]::Escape($want)
   foreach ($pat in @(
-    ('"text":"' + [regex]::Escape($want) + '"[^}]*"center":"(\d+),(\d+)"'),
-    ('"text":"[^"]*' + [regex]::Escape($want) + '[^"]*"[^}]*"center":"(\d+),(\d+)"')
+    ('"(?:text|content-desc)":"[^"]*' + $esc + '[^"]*"[^}]{0,240}"center":"\[?(\d+),(\d+)\]?"'),
+    ('"(?:text|content-desc)":"[^"]*' + $esc + '[^"]*"[^}]{0,240}"bounds":"\[(\d+),(\d+)\]\[(\d+),(\d+)\]"'),
+    ('"bounds":"\[(\d+),(\d+)\]\[(\d+),(\d+)\]"[^}]{0,240}"(?:text|content-desc)":"[^"]*' + $esc + '[^"]*"')
   )) {
-    if ($j -match $pat) { return @([int]$Matches[1], [int]$Matches[2]) }
-  }
-  if ($j -match ('"text":"[^"]*' + [regex]::Escape($want) + '[^"]*"[^}]*"bounds":"\[(\d+),(\d+)\]\[(\d+),(\d+)\]"')) {
-    $x = [int](([int]$Matches[1] + [int]$Matches[3]) / 2)
-    $y = [int](([int]$Matches[2] + [int]$Matches[4]) / 2)
-    return @($x, $y)
+    if ($j -match $pat) {
+      if ($Matches.Count -ge 5 -and $Matches[4]) {
+        $x = [int](([int]$Matches[1] + [int]$Matches[3]) / 2)
+        $y = [int](([int]$Matches[2] + [int]$Matches[4]) / 2)
+        return @($x, $y)
+      }
+      return @([int]$Matches[1], [int]$Matches[2])
+    }
   }
   return $null
 }
@@ -231,28 +235,30 @@ Write-Host ("SAVE_SLOT={0}" -f $saveLabel)
 
 # load into game — tap save slot (agency name contains 콜업)
 $loaded = $false
-foreach ($lab in @('콜업 에이전시','1년차','7월')) {
+foreach ($lab in @('콜업 에이전시','1년차','8월','7월')) {
   if (Has $t $lab) {
-    if (TapText $lab 2800) { $loaded = $true; break }
+    if (TapText $lab 3500) { $loaded = $true; break }
   }
 }
-if (-not $loaded) { Tap 720 2200 2800 }
-Start-Sleep 3
+if (-not $loaded) {
+  # accessibility bounds for slot1 continue (1440x3120): ~628,2222
+  Tap 500 2220 3500
+}
+Start-Sleep 2
 Shot 'dg-07-loaded.png'
 $t = Texts
 Write-Host 'loaded:' (($t | Select-Object -First 15) -join ' | ')
 $inGame = Has $t '오피스|자금|영입|홈 화면|선수|구단|목표'
 $onTitle = (Has $t '새 게임') -and -not $inGame
-Write-Host ("LOAD_INGAME={0} ON_TITLE={1}" -f $inGame, $onTitle)
-if (Has $t '콜업 야구 세이브만|새 게임을 시작') { Write-Host 'REJECT_MSG_SHOWN' }
+$rejectMsg = Has $t '콜업 야구 세이브만'
+Write-Host ("LOAD_INGAME={0} ON_TITLE={1} REJECT_MSG={2}" -f $inGame, $onTitle, $rejectMsg)
 
-# --- old save reject probe (release APK: run-as unavailable) ---
+# --- old save reject: offline unit (device import needs empty slot + file) ---
 Write-Host '--- reject probe ---'
-try {
-  adb -s $dev shell run-as com.callup.agency ls app_webview 2>$null | Out-Null
-} catch {
-  Write-Host 'reject probe skipped (not debuggable)'
-}
+$unit = & node (Join-Path $PSScriptRoot 'test-b1-assert.cjs') 2>&1 | Out-String
+Write-Host $unit
+$rejectUnit = $unit -match 'B1 assert unit PASS'
+Write-Host ("REJECT_UNIT={0}" -f $rejectUnit)
 
 Write-Host 'DEVICE_GATES_DONE'
-Write-Host ("WEEK={0} SAVE={1} LOAD={2}" -f $weekAdvanced, $saveLabel, $inGame)
+Write-Host ("WEEK={0} SAVE={1} LOAD={2} REJECT={3}" -f $weekAdvanced, $saveLabel, $inGame, $rejectUnit)
