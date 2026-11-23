@@ -24,6 +24,17 @@ css = css.split("rgba(240, 199, 94,").join("rgba(47, 125, 74,");
 css = css.split("--zebra: #0D1C2E").join("--zebra: #EAF0E6");
 css = css.split("--good: #B8E986").join("--good: #2F7D4A");
 css = css.split("--tag-good: #B8E986").join("--tag-good: #2F7D4A");
+// Tutorial bubble was dark (#2F3338); with bright --ink it becomes unreadable.
+css = css.split("--tut-bub: #2F3338").join("--tut-bub: #FFFFFF");
+css = css.split("--tut-bub:#2F3338").join("--tut-bub:#FFFFFF");
+// Logo picker default opacity .5 looks invisible on light UI.
+css = css
+  .split(
+    ".ti-logos button{display:grid;place-items:center;height:50px;border-radius:var(--r-s);background:var(--bg2);opacity:.5;"
+  )
+  .join(
+    ".ti-logos button{display:grid;place-items:center;height:50px;border-radius:var(--r-s);background:#fff;opacity:1;border:1px solid var(--line);"
+  );
 fs.writeFileSync(cssPath, css);
 console.log("shell css bright");
 

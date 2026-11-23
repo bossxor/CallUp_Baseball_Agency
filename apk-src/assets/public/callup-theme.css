@@ -62,11 +62,91 @@ body,
   color: var(--ink);
 }
 
-/* Soften SignHere neon/dark chrome */
+/* Soften SignHere neon/dark chrome — keep readable, not ghostly */
 .mo,
 .mo-rays:before {
   filter: none !important;
-  opacity: 0.35 !important;
+  opacity: 0.55 !important;
+}
+
+/* Tutorial tips: bright theme — dark bub + dark ink = invisible */
+.tut {
+  --tut-bub: #ffffff !important;
+}
+.tut-bub {
+  background: #ffffff !important;
+  color: var(--ink) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 16px 40px rgba(28, 42, 32, 0.18) !important;
+}
+.tut-bub.above:after,
+.tut-bub.below:after {
+  background: #ffffff !important;
+}
+.tut-nm b {
+  color: var(--ink) !important;
+}
+.tut-nm small {
+  color: var(--sub) !important;
+}
+.tut-bub p {
+  color: var(--body) !important;
+}
+.tut-skip {
+  color: var(--sub) !important;
+}
+.tut-wait {
+  color: var(--accent-lo) !important;
+  background: rgba(47, 125, 74, 0.12) !important;
+  border: 1px solid rgba(47, 125, 74, 0.35) !important;
+}
+.tut-wait:before {
+  background: var(--accent) !important;
+}
+.btn.go.tut-next {
+  background: var(--fill-accent) !important;
+  color: var(--accent-ink) !important;
+}
+
+/* Registration glass + logos were washed out on bright theme */
+.ti-glass {
+  background: #ffffff !important;
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 12px 28px rgba(28, 42, 32, 0.12) !important;
+}
+.ti-glass .field label {
+  color: var(--body) !important;
+  font-weight: 700 !important;
+}
+.ti-glass .field label small {
+  color: var(--sub) !important;
+  font-weight: 500 !important;
+}
+.ti-glass .field input,
+.ti-glass .field select {
+  color: var(--ink) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--line2) !important;
+  border-color: var(--line2) !important;
+}
+.ti-glass .field input:focus,
+.ti-glass .field select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(47, 125, 74, 0.18) !important;
+}
+.ti-logos button {
+  opacity: 1 !important;
+  background: #ffffff !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+.ti-logos button.on {
+  opacity: 1 !important;
+  border-color: var(--accent) !important;
+  box-shadow: inset 0 0 0 2px var(--accent) !important;
+  transform: scale(1.04);
 }
 .sr-pick,
 .sheet,
@@ -121,11 +201,12 @@ i.pcd-crest,
   position: absolute;
   inset: 0;
   pointer-events: none;
+  opacity: 0.45;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--bg) 18%, transparent),
-    color-mix(in srgb, #2f7d4a 12%, transparent) 55%,
-    color-mix(in srgb, var(--bg) 35%, transparent)
+    color-mix(in srgb, var(--bg) 10%, transparent),
+    color-mix(in srgb, #2f7d4a 6%, transparent) 55%,
+    color-mix(in srgb, var(--bg) 16%, transparent)
   );
 }
 
