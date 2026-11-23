@@ -41,21 +41,24 @@
 - `tools/build-callup.ps1` — `com.callup.agency` APK 빌드
 - `assets/public/callup-theme.css` — 전광판/용지 오버레이
 
-## 안전 모드 한계
+## Phase B 스키마 (2026-11-23)
 
-포지션 코드(`GK`/`DF`/`MF`/`FW`)와 시뮬 속성(`gk`/`sho` 등)은 **내부 유지**.  
-코드 ID까지 바꾸면 월드 생성이 멈춘다. 화면 라벨만 투수/내야수/외야수/타자로 바꾼다.  
-구단 실데이터·경기 규칙의 야구 시뮬 교체는 후속.
+- 포지션 풀 9: `P C 1B 2B 3B SS LF CF RF`
+- 능력키: `spd bat pit fld phy`
+- 기록: `st.h` / `st.rbi` / `st.ch`
+- 세이브 B1: `callupBaseball1` + `callupAssertBaseball`
+- 패치: `tools/patch-baseball-sim.cjs` (`cleanupEngineBuckets`)
+- 게이트: `check-soccer-schema.ps1` · `docs/egm-review/phase-b-gate-notes.md`
 
 ## Phase A scene priority
 
-�౸�� �ٷ� ������ �ؽ� webp�� ���� �߸� ������ ��� (`tools/patch-scenes.js`):
+�౸�� �ٷ� ������ �ؽ� webp�� ���� �߸� ������ ��� (`tools/patch-scenes.js`):
 
-| ��� (soccer-forward) | ��ü |
+| ��� (soccer-forward) | ��ü |
 | --- | --- |
 | `goal-*.webp` | `stadium-aNDQ45iG.webp` |
 | `shootout-*.webp` | `training-IFqjAQlg.webp` |
 | `adshoot-*.webp` | `press-OvdAyDZ8.webp` |
 | `court-*.webp` | `park-C4VF5vsp.webp` |
 
-��ü�� ����Ʈ: `tools/check-identity.ps1`. Manifest Activity `com.signhere.offline.*` ��δ� Phase A ���. �ù� ��ü�� Phase B �ε��.
+��ü�� ����Ʈ: `tools/check-identity.ps1`. Manifest Activity `com.signhere.offline.*` ��δ� Phase A ���. �ù� ��ü�� Phase B �ε��.

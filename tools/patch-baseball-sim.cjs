@@ -261,8 +261,99 @@ function patchEngine(file) {
     process.exit(2);
   }
 
+  s = cleanupEngineBuckets(s);
   write(file, s);
   console.log("wrote engine");
+}
+
+/** Always-run: 4-pos identifier buckets → 9-pos (world-gen push crash). */
+function cleanupEngineBuckets(s) {
+  const POS_BUCKET =
+    '{P:[],C:[],"1B":[],"2B":[],"3B":[],SS:[],LF:[],CF:[],RF:[]}';
+  const UI_WD =
+    'ui=x=>{return{P:1,C:1,"1B":1,"2B":1,"3B":1,SS:1,LF:1,CF:1,RF:1}},Wd=x=>{return{P:5,C:2,"1B":2,"2B":2,"3B":2,SS:2,LF:2,CF:2,RF:2}}';
+  const xFnew =
+    'const xF={P:{spd:42,bat:28,pit:62,fld:48,phy:55},C:{spd:45,bat:55,pit:18,fld:62,phy:58},"1B":{spd:45,bat:60,pit:12,fld:55,phy:58},"2B":{spd:58,bat:55,pit:12,fld:60,phy:50},"3B":{spd:48,bat:58,pit:12,fld:58,phy:55},SS:{spd:60,bat:55,pit:12,fld:62,phy:50},LF:{spd:58,bat:60,pit:10,fld:52,phy:52},CF:{spd:65,bat:55,pit:10,fld:60,phy:50},RF:{spd:55,bat:62,pit:10,fld:52,phy:54}},eF=["spd","bat","pit","fld","phy"]';
+  const pairs = [
+    [
+      "ui=x=>{const[e,t,n]=Hw[Vn(x)];return{GK:1,DF:e,MF:t,FW:n}},Wd=x=>{const e=ui(x);return{GK:3,DF:e.DF*2,MF:e.MF*2,FW:e.FW*2+2}}",
+      UI_WD,
+    ],
+    ["{GK:[],DF:[],MF:[],FW:[]}", POS_BUCKET],
+    [
+      'Du={GK:"투수",DF:"내야수",MF:"외야수",FW:"타자"}',
+      'Du={P:"투수",C:"포수","1B":"1루수","2B":"2루수","3B":"3루수",SS:"유격수",LF:"좌익수",CF:"중견수",RF:"우익수"}',
+    ],
+    [
+      "A8={GK:1,DF:4,MF:4,FW:2}",
+      'A8={P:1,C:1,"1B":1,"2B":1,"3B":1,SS:1,LF:1,CF:1,RF:1}',
+    ],
+    [
+      "N1={26:{GK:3,DF:9,MF:8,FW:6},23:{GK:3,DF:8,MF:7,FW:5},22:{GK:3,DF:7,MF:7,FW:5},21:{GK:3,DF:7,MF:7,FW:4},20:{GK:2,DF:7,MF:7,FW:4},18:{GK:2,DF:6,MF:6,FW:4}}",
+      'N1={26:{P:5,C:2,"1B":2,"2B":3,"3B":2,SS:3,LF:3,CF:3,RF:3},23:{P:5,C:2,"1B":2,"2B":2,"3B":2,SS:2,LF:3,CF:3,RF:2},22:{P:5,C:2,"1B":2,"2B":2,"3B":2,SS:2,LF:2,CF:3,RF:2},21:{P:4,C:2,"1B":2,"2B":2,"3B":2,SS:2,LF:2,CF:3,RF:2},20:{P:4,C:2,"1B":2,"2B":2,"3B":2,SS:2,LF:2,CF:2,RF:2},18:{P:4,C:2,"1B":2,"2B":2,"3B":2,SS:2,LF:1,CF:2,RF:1}}',
+    ],
+    [
+      'GE={GK:"무난한 투수",DF:"무난한 내야수",MF:"무난한 외야수",FW:"무난한 타자"}',
+      'GE={P:"무난한 투수",C:"무난한 포수","1B":"무난한 1루수","2B":"무난한 2루수","3B":"무난한 3루수",SS:"무난한 유격수",LF:"무난한 좌익수",CF:"무난한 중견수",RF:"무난한 우익수"}',
+    ],
+    [
+      "k4={GK:[1,1,1,1,13,12,21],DF:[4,5,3,2,6,4,5,15,14],MF:[8,10,6,7,8,10,14,16,17,18,23],FW:[9,7,11,10,9,7,19,20]},US={GK:[1],DF:[4,5,3],MF:[10,8,7],FW:[9,7,11]}",
+      'k4={P:[1,11,18,21,34,45,99],C:[2,27,37],"1B":[3,19,25],"2B":[4,14,23],"3B":[5,15],SS:[6,7],LF:[8,16],CF:[8,24],RF:[9,22]},US={P:[1],C:[2],"1B":[3],"2B":[4],"3B":[5],SS:[6],LF:[7],CF:[8],RF:[9]}',
+    ],
+    [
+      "lj={FW:.15,MF:0,DF:-.18,GK:-.1}",
+      'lj={RF:.15,CF:.1,LF:.08,SS:.05,"2B":0,"3B":0,"1B":-.05,C:-.08,P:-.1}',
+    ],
+    [
+      "position:{GK:W0.posGK,DF:W0.posDF,MF:W0.posMF,FW:W0.posFW}[e.pos]",
+      'position:{P:W0.posGK,C:W0.posDF,"1B":W0.posDF,"2B":W0.posMF,"3B":W0.posMF,SS:W0.posMF,LF:W0.posFW,CF:W0.posFW,RF:W0.posFW}[e.pos]',
+    ],
+    [
+      'const xF={FW:{pac:50.6,sho:59.1,pas:58.1,dri:57.1,def:40.7,phy:54.2},MF:{pac:51.6,sho:56.7,pas:60.6,dri:55.3,def:59,phy:52},DF:{pac:51.1,sho:41.3,pas:59.1,dri:41,def:61.7,phy:52.3}},eF=["spd","bat","fld","bat","fld","phy"]',
+      xFnew,
+    ],
+    [
+      "eF.reduce((r,i)=>r+n(i),0)/6",
+      "eF.reduce((r,i)=>r+n(i),0)/eF.length",
+    ],
+    [
+      "d=Math.max(1,{FW:i.int(6,9),MF:i.int(2,4),DF:i.int(1,2),GK:0}[t.pos])",
+      'd=t.pos==="P"?0:Math.max(1,{RF:i.int(6,9),CF:i.int(5,8),LF:i.int(5,8),SS:i.int(3,6),"2B":i.int(3,6),"3B":i.int(3,6),"1B":i.int(4,7),C:i.int(2,5)}[t.pos]??i.int(2,5))',
+    ],
+    [
+      "{club:p.club,seasons:0,apps:0,goals:0,ast:0};f.seasons+=p.season?1:0,f.apps+=p.apps,f.goals+=p.goals,f.ast+=p.ast",
+      "{club:p.club,seasons:0,apps:0,h:0,rbi:0};f.seasons+=p.season?1:0,f.apps+=p.apps,f.h+=(p.h||0),f.rbi+=(p.rbi||0)",
+    ],
+    [
+      "t.st={...t.st,apps:s,goals:d,ast:i.int(1,5),rSum:s*i.range(6.8,7.1)}",
+      "t.st={...t.st,apps:s,h:d,rbi:i.int(1,5),rSum:s*i.range(6.8,7.1)}",
+    ],
+    [
+      "x.st={apps:0,goals:0,ast:0,rSum:0,capps:0,cgoals:0}",
+      "x.st={apps:0,h:0,rbi:0,rSum:0,capps:0,ch:0}",
+    ],
+    [
+      "st:{apps:0,goals:0,ast:0,rSum:0,capps:0,cgoals:0}",
+      "st:{apps:0,h:0,rbi:0,rSum:0,capps:0,ch:0}",
+    ],
+    ["tm_hattrick_ball", "tm_multi_ball"],
+    ['e.kind==="hattrick"', 'e.kind==="multi"'],
+    ['kind:"hattrick"', 'kind:"multi"'],
+    ['kind:"cupgoal"', 'kind:"cuphit"'],
+  ];
+  let total = 0;
+  for (const [a, b] of pairs) {
+    if (!s.includes(a)) continue;
+    const c = s.split(a).length - 1;
+    s = s.split(a).join(b);
+    total += c;
+  }
+  if (total) console.log("cleanupEngineBuckets", total);
+  if (s.includes("{GK:[],DF:[],MF:[],FW:[]}") || s.includes("return{GK:1,DF:")) {
+    console.error("cleanup failed: soccer buckets remain");
+    process.exit(3);
+  }
+  return s;
 }
 
 function patchShell(file) {
@@ -312,6 +403,22 @@ function patchShell(file) {
     // leave engine to stamp; shell shows toast on throw
   }
 
+  // Scout/filter chips: full 9 positions
+  s = apply(
+    s,
+    [
+      [
+        'const e1=()=>[["ANY",n("전체")],["RF","RF"],["SS","SS"],["C","C"],["P","P"]]',
+        'const e1=()=>[["ANY",n("전체")],["P",n("투수")],["C",n("포수")],["1B",n("1루수")],["2B",n("2루수")],["3B",n("3루수")],["SS",n("유격수")],["LF",n("좌익수")],["CF",n("중견수")],["RF",n("우익수")]]',
+      ],
+      [
+        'const positions = ["P", "C", "SS", "RF"].map(pos => [pos, Yo(pos)]);',
+        'const positions = ["P","C","1B","2B","3B","SS","LF","CF","RF"].map(pos => [pos, Yo(pos)]);',
+      ],
+    ],
+    "shell-pos9-filters"
+  );
+
   write(file, s);
 }
 
@@ -341,6 +448,16 @@ patchEngine(engine);
 patchShell(path.join(assets, "shell-DaKdX7f1.js"));
 for (const f of ["ui-DSX53OnJ.js", "ui-DgYnPcSw.js", "i18n-D-FAABCZ.js"]) {
   patchUi(path.join(assets, f));
+}
+for (const f of fs.readdirSync(assets)) {
+  if (!f.endsWith(".js")) continue;
+  const fp = path.join(assets, f);
+  let s = read(fp);
+  if (!s.includes("hattrick") && !s.includes("tm_hattrick_ball")) continue;
+  s = s.split("tm_hattrick_ball").join("tm_multi_ball");
+  s = s.split("hattrick").join("multi");
+  write(fp, s);
+  console.log("purged hattrick", f);
 }
 
 console.log("patch-baseball-sim done", map.positions.join(","));

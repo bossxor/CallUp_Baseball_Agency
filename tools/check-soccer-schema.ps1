@@ -12,7 +12,11 @@ $patterns = @(
     @{ Name = 'Ss_GK';   Regex = 'Ss=\{GK:' },
     @{ Name = 'Rt_GK';   Regex = 'Rt=\{GK:' },
     @{ Name = 'pos_GK';  Regex = 'Ss=\{GK:|Rt=\{GK:|pos==="GK"|"GK","DF","MF","FW"' },
+    @{ Name = 'bucket_GK'; Regex = '\{GK:\[\],DF:\[\],MF:\[\],FW:\[\]\}|return\{GK:1,DF:' },
+    @{ Name = 'Du_GK';  Regex = 'Du=\{GK:' },
+    @{ Name = 'xF_FW';  Regex = 'xF=\{FW:\{pac:' },
     @{ Name = 'ability_gk'; Regex = 'stat:\{gk:|"gk":|\.gk(?=[^A-Za-z]|$)|B8=\{[^}]*gk:' },
+    @{ Name = 'hattrick'; Regex = 'hattrick' },
     @{ Name = 'SignHere'; Regex = 'Sign Here|SignHere|사인히어|Football Agent|Football Agency' },
     @{ Name = '축구에이전'; Regex = '축구 에이전|풋볼 에이전' }
 )
