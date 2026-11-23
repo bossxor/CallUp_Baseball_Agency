@@ -12,11 +12,7 @@ $dev = if ($Serial) { $Serial } else {
 }
 Write-Host "device $dev"
 
-function Foreground {
-  adb -s $dev shell am start -n com.callup.agency/com.signhere.offline.MainActivity | Out-Null
-}
 function Shot($n) {
-  Foreground
   adb -s $dev shell screencap -p /sdcard/cu.png | Out-Null
   adb -s $dev pull /sdcard/cu.png (Join-Path $out $n) | Out-Null
   Write-Host "shot $n"
@@ -45,11 +41,14 @@ function Texts([string]$j) {
 }
 function Has($arr,$pat){ ($arr | Where-Object { $_ -match $pat }).Count -gt 0 }
 function FindCenter([string]$j, [string]$want) {
-  # bounds like [x1,y1][x2,y2] near text — android CLI json may have center
-  if ($j -match ('"text":"' + [regex]::Escape($want) + '"[^}]*"center":"(\d+),(\d+)"')) {
-    return @([int]$Matches[1], [int]$Matches[2])
+  # exact, then contains
+  foreach ($pat in @(
+    ('"text":"' + [regex]::Escape($want) + '"[^}]*"center":"(\d+),(\d+)"'),
+    ('"text":"[^"]*' + [regex]::Escape($want) + '[^"]*"[^}]*"center":"(\d+),(\d+)"')
+  )) {
+    if ($j -match $pat) { return @([int]$Matches[1], [int]$Matches[2]) }
   }
-  if ($j -match ('"text":"' + [regex]::Escape($want) + '"[^}]*"bounds":"\[(\d+),(\d+)\]\[(\d+),(\d+)\]"')) {
+  if ($j -match ('"text":"[^"]*' + [regex]::Escape($want) + '[^"]*"[^}]*"bounds":"\[(\d+),(\d+)\]\[(\d+),(\d+)\]"')) {
     $x = [int](([int]$Matches[1] + [int]$Matches[3]) / 2)
     $y = [int](([int]$Matches[2] + [int]$Matches[4]) / 2)
     return @($x, $y)
@@ -137,7 +136,7 @@ function DriveNegoOrTut([string]$j, $t) {
 for ($i=0; $i -lt 80; $i++) {
   $j = Lay
   $t = Texts $j
-  if (Has $t '광고') { throw 'AD_MID' }
+  if (IsAdIap $t) { throw 'AD_MID' }
   if (DriveNegoOrTut $j $t) {
     if (($i % 8) -eq 7) { Shot ("dg-03-adv{0:D2}.png" -f $i) }
     continue
@@ -180,33 +179,36 @@ for ($i=0; $i -lt 30; $i++) {
 Shot 'dg-04-tut-clear.png'
 $t0 = Texts
 $date0 = ($t0 | Where-Object { $_ -match '\d{4}\.\d{2}\.\d{2}' } | Select-Object -First 1)
+if (-not $date0) {
+  # fallback from earlier home-ish line
+  $date0 = ($t | Where-Object { $_ -match '\d{4}\.\d{2}\.\d{2}' } | Select-Object -First 1)
+}
 Write-Host "DATE0=$date0"
 
-# advance weeks — look for week controls
+# advance weeks — center tab (.tabs .mid) is the week button; dismiss goal/mission first
 $weekAdvanced = $false
-for ($w=1; $w -le 20; $w++) {
+$week0 = $null
+if ($date0 -match '(\d{4})\.(\d{2})\.(\d{2})') { $week0 = $date0 }
+for ($w=1; $w -le 24; $w++) {
   $j = Lay
   $t = Texts $j
-  $hit = $false
-  foreach ($lab in @('다음 주','다음주','주 넘기기','시간 보내기','패스','진행','보내기')) {
-    if (Has $t $lab) {
-      if (TapText $lab 1200) { $hit = $true; Write-Host "tap $lab" }
-    }
+  # dismiss achievement / mission / inbox cards
+  foreach ($lab in @('확인','닫기','다음','알겠어요')) {
+    if (Has $t $lab) { TapText $lab 900 | Out-Null }
   }
-  if (-not $hit) {
-    # common FAB / bottom actions
-    Tap 1200 3000 500
-    Tap 720 3050 500
-    Tap 1100 2800 500
-  }
+  # home tab then center mid (week)
+  TapText '홈' 600 | Out-Null
+  # bottom nav center ≈ mid of 5 tabs
+  Tap 720 3020 1400
+  Tap 720 2950 800
   if (($w % 2) -eq 0) {
     Shot ("dg-05-week{0:D2}.png" -f $w)
     $t = Texts
     $date = ($t | Where-Object { $_ -match '\d{4}\.\d{2}\.\d{2}' } | Select-Object -First 1)
     Write-Host ("week{0} DATE={1} sample={2}" -f $w, $date, (($t | Select-Object -First 8) -join ' / '))
-    if ($date0 -and $date -and ($date -ne $date0)) {
+    if ($week0 -and $date -and ($date -ne $week0)) {
       $weekAdvanced = $true
-      Write-Host "WEEK_ADVANCE_OK $date0 -> $date"
+      Write-Host "WEEK_ADVANCE_OK $week0 -> $date"
       break
     }
   }
@@ -224,31 +226,30 @@ Write-Host 'relaunch:' ($t -join ' | ')
 $saveLabel = Has $t '년차|콜업 에이전시'
 Write-Host ("SAVE_SLOT={0}" -f $saveLabel)
 
-# load into game — tap green save row (agency name), not lock slots
+# load into game — tap save slot (agency name contains 콜업)
 $loaded = $false
-foreach ($lab in @('콜업 에이전시','1년차')) {
+foreach ($lab in @('콜업 에이전시','1년차','7월')) {
   if (Has $t $lab) {
-    # tap left side of first slot button
-    if (TapText $lab 2500) { $loaded = $true; break }
+    if (TapText $lab 2800) { $loaded = $true; break }
   }
 }
-if (-not $loaded) { Tap 600 2200 2500 }
-Start-Sleep 2
+if (-not $loaded) { Tap 720 2200 2800 }
+Start-Sleep 3
 Shot 'dg-07-loaded.png'
 $t = Texts
 Write-Host 'loaded:' (($t | Select-Object -First 15) -join ' | ')
-$inGame = Has $t '오피스|자금|영입|홈 화면|선수|구단'
-$onTitle = Has $t '새 게임|BASEBALL|1번'
+$inGame = Has $t '오피스|자금|영입|홈 화면|선수|구단|목표'
+$onTitle = (Has $t '새 게임') -and -not $inGame
 Write-Host ("LOAD_INGAME={0} ON_TITLE={1}" -f $inGame, $onTitle)
 if (Has $t '콜업 야구 세이브만|새 게임을 시작') { Write-Host 'REJECT_MSG_SHOWN' }
 
-# --- old save reject probe via injected localStorage soccer fingerprint ---
+# --- old save reject probe (release APK: run-as unavailable) ---
 Write-Host '--- reject probe ---'
-adb -s $dev shell am force-stop com.callup.agency
-# dump shared prefs / webview localstorage paths
-adb -s $dev shell run-as com.callup.agency ls app_webview 2>$null
-adb -s $dev shell run-as com.callup.agency ls shared_prefs 2>$null
-adb -s $dev shell "run-as com.callup.agency find . -name '*Local Storage*' 2>/dev/null | head" 2>$null
+try {
+  adb -s $dev shell run-as com.callup.agency ls app_webview 2>$null | Out-Null
+} catch {
+  Write-Host 'reject probe skipped (not debuggable)'
+}
 
 Write-Host 'DEVICE_GATES_DONE'
 Write-Host ("WEEK={0} SAVE={1} LOAD={2}" -f $weekAdvanced, $saveLabel, $inGame)
