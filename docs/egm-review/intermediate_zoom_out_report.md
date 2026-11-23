@@ -1,0 +1,9 @@
+# Intermediate Zoom Out
+
+- **Blocker before dynamic markets.** Registration failure can currently throw and stop time once eligibility or capacity becomes mutable. Specify a failed terminal state, release the claim, retain the old affiliation, and charge no fee. Commit completed steps before computing a further step. (Implementation §§2–3; source `advanceClubDeals`, `advance`, `commit`.)
+- **Major — Save and history.** The loader caps input at 1,000,000 characters while the writer has no matching check. Reports accumulate and weekly notes retain 52 entries. Recovery is incomplete in the Android app. Reopening must accept everything a successful write produces, and the first playable version needs a tested recovery path. Completed games must not change when simulation rules change. (Source `parseSave`, `commit`, `koreaSeason`, `MainActivity`.)
+- **Major — Home UX.** Urgent decisions compete with horizontal cards and a batch button. Make deadline and direct entry visible, keep the existing top-level navigation, and restore context after Back. Keep the player card and report structure and check it on small phones. (Game §§2, 7; source `office`, `recruitment`.)
+- **Major — Scope and ordering.** Rebaseline v0.1.10 before calling for four simulated markets. Reuse the weekly core and test real competing offers and one domestic decision before widening the league simulation.
+- **Major — Economy and outcomes.** Document the existing values and exact benefit of paid scouting or support. Confirm that player priorities change which differently timed offers are plausible choices. Preserve a viable scouting path after a missed introduction.
+
+The first critic's alternatives requirement is a documentation gate. It does not justify replacing the existing week-based automated model without playtest evidence.

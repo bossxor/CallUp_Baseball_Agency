@@ -5,3 +5,13 @@ dist/
 .build/
 *.apk
 *.apk.idsig
+# APK fork working tree
+*.apk
+*.apk.idsig
+*.keystore
+*.jks
+node_modules/
+dist/
+.build/
+apk-src/build/
+apk-src/dist/

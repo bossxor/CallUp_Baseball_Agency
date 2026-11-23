@@ -1,0 +1,250 @@
+/* CallUp — bright daylight baseball office. Distinct from SignHere dark foil. */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --bg: #F2F5EF;
+  --bg2: #E6EBE2;
+  --panel: #FFFFFF;
+  --panel2: #F7FAF4;
+  --panel3: #EEF3EA;
+  --line: #D3DCCE;
+  --line2: #BFCAB8;
+  --ink: #1B2A20;
+  --body: #3A4A40;
+  --sub: #66766C;
+  --dim: #8A978E;
+  --ink2: #2A3A30;
+  --body2: #4A5A50;
+  --dim2: #7A8A80;
+  --sub-tip: #6E7E74;
+  --accent: #2F7D4A;
+  --accent-ink: #FFFFFF;
+  --accent-soft: rgba(47, 125, 74, 0.12);
+  --accent-line: rgba(47, 125, 74, 0.4);
+  --accent-hi: #4CA86A;
+  --accent-lo: #246B3C;
+  --fill-accent: linear-gradient(180deg, var(--accent-hi) 0%, var(--accent) 50%, var(--accent-lo) 100%);
+  --sh-accent: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.12), 0 6px 12px -6px rgba(47, 125, 74, 0.35);
+  --gold: #B8922E;
+  --gold-ink: #2A1E00;
+  --gold-soft: rgba(184, 146, 46, 0.14);
+  --fill-gold: linear-gradient(180deg, #E8C96A 0%, var(--gold) 50%, #9A7A22 100%);
+  --sh-gold: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 10px -4px rgba(184, 146, 46, 0.35);
+  --fill-panel: var(--panel);
+  --sh-panel: inset 0 0 0 1px var(--line);
+  --fill-btn: linear-gradient(180deg, #FFFFFF 0%, var(--panel2) 100%);
+  --sh-btn: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 5px rgba(28, 42, 32, 0.08);
+  --fill-sel: rgba(47, 125, 74, 0.1);
+  --zebra: #EAF0E6;
+  --paper: #FFFDF8;
+  --paper-ink: #1B2A20;
+  --up: #2F7D4A;
+  --down: #C45B4A;
+  --blue: #3D7AB5;
+  --good: #2F7D4A;
+  --bad: #C45B4A;
+  --warn: #C4922E;
+  --tag-good: #2F7D4A;
+  --tag-good-bg: rgba(47, 125, 74, 0.12);
+  --tag-bad: #C45B4A;
+  --tag-bad-bg: rgba(196, 91, 74, 0.12);
+  --say: #1B2A20;
+  --say-ink: #FFFFFF;
+  --f-disp: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-num: "IBM Plex Mono", "Noto Sans KR", monospace;
+  --f-mono: "IBM Plex Mono", monospace;
+  --f-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+html,
+body,
+.app {
+  background: #F2F5EF !important;
+  color: var(--ink);
+}
+
+/* Soften SignHere neon/dark chrome */
+.mo,
+.mo-rays:before {
+  filter: none !important;
+  opacity: 0.35 !important;
+}
+.sr-pick,
+.sheet,
+.panel,
+.card,
+.opt,
+.btn {
+  border-radius: 14px !important;
+}
+
+/* Title: bright field, no night stadium clone */
+.ti-logo,
+.title {
+  color: var(--ink) !important;
+}
+.ti-sub {
+  color: var(--accent) !important;
+  letter-spacing: 0.22em !important;
+  font-weight: 800 !important;
+}
+.ti-emblem,
+.ti-logo img,
+img[src*="emblem"] {
+  border-radius: 18px !important;
+  box-shadow: 0 10px 28px rgba(28, 42, 32, 0.12) !important;
+  filter: none !important;
+}
+/* TITLE_SWOOSH_HIDE */
+.ti-sign,
+.ti-sig,
+.ti-swoosh {
+  display: none !important;
+}
+
+/* Club crests — hue-shift away from SignHere soccer badge palette */
+img[src*="/crests/"],
+img[src*="crests/"],
+.pcd-crest img,
+.crest img,
+i.pcd-crest,
+.pcd-crest,
+[class*="crest"] img {
+  filter: hue-rotate(118deg) saturate(0.9) contrast(1.06) !important;
+}
+
+/* Scene wash — dull residual soccer art; prefer swapped webps from patch-scenes.js */
+.scene {
+  filter: saturate(0.82) contrast(1.04) !important;
+}
+.scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg) 18%, transparent),
+    color-mix(in srgb, #2f7d4a 12%, transparent) 55%,
+    color-mix(in srgb, var(--bg) 35%, transparent)
+  );
+}
+
+/* Story / office cards — paper not neon foil */
+[class*="story"] .card,
+.st-card,
+.sty-cand,
+.sr-arrive {
+  background: var(--panel) !important;
+  box-shadow: 0 8px 24px rgba(28, 42, 32, 0.08) !important;
+  border: 1px solid var(--line) !important;
+}
+
+/* Primary buttons: grass green, not foil gold */
+.opt.r,
+.btn.primary,
+.dd-next,
+button.opt.r {
+  background: var(--fill-accent) !important;
+  color: var(--accent-ink) !important;
+  box-shadow: var(--sh-accent) !important;
+}
+
+/* Scout report dossier */
+.spk-in {
+  background: linear-gradient(180deg, #dfe8d8, #c9d6c2) !important;
+  box-shadow: inset 0 1px 0 #fff8, 0 2px 0 #0001 !important;
+}
+.spk-body {
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(47, 125, 74, 0.06) 28px),
+    linear-gradient(165deg, #fffef9 0%, #f7f1e6 60%, #efe6d6 100%) !important;
+  box-shadow:
+    inset 0 0 0 1px #c5d0b8,
+    0 14px 24px -12px rgba(28, 42, 32, 0.25),
+    6px 10px 0 -2px #eef3ea,
+    6px 10px 0 -1px #c5d0b8 !important;
+}
+.spk-band,
+.spk-band:before,
+.spk-gloss,
+.spk-spec,
+.spk-pil,
+.spk-crimp,
+.spk-sh,
+.spk-top,
+.spk-open,
+.spk-perf,
+.spk-seal,
+.spk-micro,
+.spk-trail,
+.spk-finger,
+.spk-sp {
+  display: none !important;
+  opacity: 0 !important;
+  animation: none !important;
+}
+.spk-fr {
+  box-shadow: inset 0 0 0 1px rgba(47, 125, 74, 0.25), inset 0 0 0 3px #fffef9 !important;
+}
+.spk-sig {
+  font: 700 26px/1.05 var(--f-num) !important;
+  letter-spacing: 0.1em !important;
+  color: #1b2a20 !important;
+  transform: none !important;
+  text-shadow: none !important;
+  top: 148px !important;
+}
+.spk-sub {
+  color: #2f7d4a !important;
+  letter-spacing: 0.24em !important;
+  top: 186px !important;
+}
+.spk-rg { color: #4a5a50 !important; }
+.spk-tip {
+  top: auto !important;
+  bottom: 12px !important;
+  color: var(--ink) !important;
+  font-weight: 600 !important;
+}
+.spk-base {
+  transform-origin: 50% 100% !important;
+  will-change: transform;
+}
+.spk.lifting .spk-base {
+  filter: drop-shadow(0 -6px 14px rgba(47, 125, 74, 0.2));
+}
+.sr-card .sr-face,
+.sr-front {
+  background: linear-gradient(180deg, #fffef9, #f3eee4) !important;
+  color: #1b2a20 !important;
+  box-shadow: inset 0 0 0 1px #c5d0b8, 0 8px 16px -10px rgba(28, 42, 32, 0.2) !important;
+}
+.sr-card.on {
+  animation: callupPageFlip 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes callupPageFlip {
+  0% { transform: perspective(800px) rotateX(55deg) translateY(24px); opacity: 0.4; }
+  100% { transform: perspective(800px) rotateX(0) translateY(0); opacity: 1; }
+}
+
+.mo-crest-t, .ttl, .title-hand, .spk-sig {
+  font-family: var(--f-num) !important;
+}
+
+
+/* CHEAT_DEV */
+.personal-cheats .set-h,
+.personal-cheats > .set-h,
+section.personal-cheats {
+  outline: 2px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+.cheat-panel {
+  background: color-mix(in srgb, var(--accent) 6%, var(--panel));
+}
+.cheat-toggle[aria-checked="true"] .cheat-toggle-track {
+  color: #fff !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
