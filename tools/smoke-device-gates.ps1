@@ -12,7 +12,11 @@ $dev = if ($Serial) { $Serial } else {
 }
 Write-Host "device $dev"
 
+function Foreground {
+  adb -s $dev shell am start -n com.callup.agency/com.signhere.offline.MainActivity | Out-Null
+}
 function Shot($n) {
+  Foreground
   adb -s $dev shell screencap -p /sdcard/cu.png | Out-Null
   adb -s $dev pull /sdcard/cu.png (Join-Path $out $n) | Out-Null
   Write-Host "shot $n"
@@ -29,6 +33,9 @@ function Lay {
   }
   if (-not (Test-Path $p)) { return '' }
   Get-Content $p -Raw -Encoding UTF8
+}
+function IsAdIap($arr) {
+  Has $arr '광고 없이|광고 제거|광고 시청|광고보고|IAP|인앱 결제'
 }
 function Texts([string]$j) {
   if (-not $j) { $j = Lay }
@@ -65,7 +72,7 @@ adb -s $dev shell am start -n com.callup.agency/com.signhere.offline.MainActivit
 Start-Sleep 3
 Shot 'dg-00-title.png'
 $t = Texts
-if (Has $t '광고') { throw 'AD_ON_TITLE' }
+if (IsAdIap $t) { throw 'AD_ON_TITLE' }
 
 # slot1 new game
 if (-not (TapText '1번 새 게임' 1800)) { Tap 721 2221 1800 }
@@ -78,7 +85,7 @@ for ($i=1; $i -le 30; $i++) {
   Start-Sleep 4
   $t = Texts
   Write-Host ("w{0}: {1}" -f $i, (($t | Select-Object -First 6) -join ' / '))
-  if (Has $t '광고 없이|광고 제거') { throw 'AD_POPUP' }
+  if (IsAdIap $t) { throw 'AD_POPUP' }
   if (Has $t '세계를 만들고') { continue }
   if (Has $t '이 선수로|다음 선수|확인|다음|회상|보고서|홈 화면|오피스') {
     $ok = $true; Shot ("dg-02-play{0:D2}.png" -f $i); break
