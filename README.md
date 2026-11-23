@@ -1,5 +1,8 @@
 # 콜업 최신 문서
 
+원격: https://github.com/bossxor/CallUp_Baseball_Agency (`main`)  
+작업 루트: `T:\CallUp` — 의미 있는 단위마다 `git commit` 후 `git push origin main`.
+
 2026년 11월 23일 기준. **현재 PC 작업선은 사인히어 오프라인 99 APK 포크**다. 에이전시 루프·WebView 골격은 유지하고, 브랜드·팔레트·표시 문구를 야구 에이전시(콜업)로 교체한다.
 
 ## 먼저 볼 문서
