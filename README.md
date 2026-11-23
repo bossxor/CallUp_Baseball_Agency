@@ -36,8 +36,8 @@ powershell -File tools/build-callup.ps1 -SkipPatch -OutputApk .\CallUp-Prototype
 
 ### 개인용 치트 (출시 전 제거)
 
-설정 → **개발용 치트**. `tools/enable-cheats.js`가 `cheats.css`를 넣고 라벨을 표시한다.  
-뺄 때: 빌드에서 `enable-cheats.js` 호출 제거 + shell의 `PersonalCheats` 마운트·엔진 `offlineCheat` 훅 정리.
+설정 → **개발용 치트**. `tools/enable-cheats.cjs`가 `cheats.css`를 넣고 라벨을 표시한다.  
+뺄 때: 빌드에서 `enable-cheats.cjs` 호출 제거 + shell의 `PersonalCheats` 마운트·엔진 `offlineCheat` 훅 정리.
 
 ## 브랜치별 구현 상태
 

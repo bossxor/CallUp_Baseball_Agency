@@ -326,3 +326,33 @@ section.personal-cheats {
   0% { transform: perspective(1200px) rotateY(70deg); opacity: 0.35; }
   100% { transform: perspective(1200px) rotateY(0); opacity: 1; }
 }
+
+
+/* PAGEFLIP_HIT_BOTTOM */
+/* Hit zone: bottom of report (UX says grab below & flip up) */
+.spk-band2 {
+  top: auto !important;
+  bottom: 0 !important;
+  left: -20px !important;
+  right: -20px !important;
+  height: 55% !important;
+  z-index: 12 !important;
+  touch-action: none !important;
+}
+.spk-grab {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 9;
+  touch-action: none;
+}
+.spk.cut .spk-grab,
+.spk.pageflip .spk-grab {
+  pointer-events: none;
+}
+.spk-tip {
+  z-index: 13 !important;
+  pointer-events: none !important;
+}

@@ -24,11 +24,11 @@ if (-not (Test-Path $androidJar)) { throw "Missing $androidJar" }
 if (-not $SkipPatch) {
     node (Join-Path $PSScriptRoot 'patch-callup.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'patch-callup failed' }
-    node (Join-Path $PSScriptRoot 'patch-bright.js') $SourceDir
+    node (Join-Path $PSScriptRoot 'patch-bright.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'patch-bright failed' }
-    node (Join-Path $PSScriptRoot 'patch-scenes.js') $SourceDir
+    node (Join-Path $PSScriptRoot 'patch-scenes.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'patch-scenes failed' }
-    node (Join-Path $PSScriptRoot 'patch-defaults.js') $SourceDir
+    node (Join-Path $PSScriptRoot 'patch-defaults.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'patch-defaults failed' }
     node (Join-Path $PSScriptRoot 'patch-baseball-sim.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'patch-baseball-sim failed' }
@@ -38,7 +38,17 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-pageflip-book failed' }
     node (Join-Path $PSScriptRoot 'fix-phase-b-offline.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-phase-b-offline failed' }
-    node (Join-Path $PSScriptRoot 'enable-cheats.js') $SourceDir
+    node (Join-Path $PSScriptRoot 'fix-logo-baseball.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-logo-baseball failed' }
+    node (Join-Path $PSScriptRoot 'fix-staff-labels.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-staff-labels failed' }
+    node (Join-Path $PSScriptRoot 'fix-purge2-copy.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-purge2-copy failed' }
+    node (Join-Path $PSScriptRoot 'fix-labels-purge3.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-labels-purge3 failed' }
+    node (Join-Path $PSScriptRoot 'fix-shooting-narrative.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-shooting-narrative failed' }
+    node (Join-Path $PSScriptRoot 'enable-cheats.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }
 

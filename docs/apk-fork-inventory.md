@@ -44,11 +44,13 @@
 ## Phase B 스키마 (2026-11-23)
 
 - 포지션 풀 9: `P C 1B 2B 3B SS LF CF RF`
-- 능력키: `spd bat pit fld phy`
-- 기록: `st.h` / `st.rbi` / `st.ch`
+- 능력키: `spd bat pit fld phy` (라벨: 주력/타격/투구/수비/피지컬)
+- 기록: `st.h` / `st.rbi` / `st.ch` (UI; 내부 `.goals` 폴백 잔존 가능)
 - 세이브 B1: `callupBaseball1` + `callupAssertBaseball`
-- 패치: `tools/patch-baseball-sim.cjs` (`cleanupEngineBuckets`)
+- 등록 로고: `fix-logo-baseball.cjs` (Xs 야구 SVG)
+- 패치: `patch-baseball-sim.cjs` · pageflip · phase-b-offline · purge2/3 · shooting-narrative
 - 게이트: `check-soccer-schema.ps1` · `docs/egm-review/phase-b-gate-notes.md`
+- 빌드: `0.1.0-callup.13` (vc128)
 
 ## Phase A scene priority
 
