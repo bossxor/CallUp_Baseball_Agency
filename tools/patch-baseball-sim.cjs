@@ -138,10 +138,11 @@ function patchEngine(file) {
         ['"dri"', '"bat"'],
         ['"def"', '"fld"'],
         ['"pac"', '"spd"'],
-        [".gk", ".pit"],
-        [".sho", ".bat"],
         ["n.gk", "n.pit"],
         ["n.sho", "n.bat"],
+        ["stats.gk", "stats.pit"],
+        ["stats.sho", "stats.bat"],
+        // NEVER replace bare ".sho"/".pac" — corrupts .shop/.pack/.short
         ['["gk","phy","pas"]', '["pit","phy","fld"]'],
         ['["pac","sho","pas","dri","def","phy"]', '["spd","bat","fld","phy"]'],
         [
@@ -340,6 +341,25 @@ function cleanupEngineBuckets(s) {
     ['e.kind==="hattrick"', 'e.kind==="multi"'],
     ['kind:"hattrick"', 'kind:"multi"'],
     ['kind:"cupgoal"', 'kind:"cuphit"'],
+    [
+      'rj=["RF","SS","C","P"]',
+      'rj=["P","C","1B","2B","3B","SS","LF","CF","RF"]',
+    ],
+    [
+      "function sj(x,e,{p:t,l:n},l=!1){const r=e.st[t.pos],i=Math.min(4,(n.avg-r.r)/r.rs),s=t.pos===\"RF\"||t.pos===\"SS\"?Math.min(4,(n.ga/n.apps-r.g)/r.gs):i",
+      'function sj(x,e,{p:t,l:n},l=!1){const r=e.st[t.pos]||{r:n.avg||0,rs:1,g:0,gs:1},i=Math.min(4,(n.avg-r.r)/r.rs),s=t.pos!=="P"?Math.min(4,(n.ga/n.apps-r.g)/r.gs):i',
+    ],
+    ["e.stats.pac>=80", "e.stats.spd>=80"],
+    ["e.stats.pas>=78", "e.stats.fld>=78"],
+    ["stats.pac", "stats.spd"],
+    ["stats.pas", "stats.fld"],
+    ["stats.dri", "stats.bat"],
+    ["stats.def", "stats.fld"],
+    // undo .sho→.bat collateral (.shop→.batp, .short→.batrt)
+    ["J.batp", "J.shop"],
+    [".batp", ".shop"],
+    [".batrt", ".short"],
+    [".spdk", ".pack"],
   ];
   let total = 0;
   for (const [a, b] of pairs) {
@@ -352,6 +372,10 @@ function cleanupEngineBuckets(s) {
   if (s.includes("{GK:[],DF:[],MF:[],FW:[]}") || s.includes("return{GK:1,DF:")) {
     console.error("cleanup failed: soccer buckets remain");
     process.exit(3);
+  }
+  if (s.includes("J.batp") || s.includes(".batp")) {
+    console.error("cleanup failed: .shop still corrupted to .batp");
+    process.exit(4);
   }
   return s;
 }

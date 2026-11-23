@@ -32,6 +32,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'patch-defaults failed' }
     node (Join-Path $PSScriptRoot 'patch-baseball-sim.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'patch-baseball-sim failed' }
+    node (Join-Path $PSScriptRoot 'fix-pageflip-hit.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-pageflip-hit failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.js') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }
@@ -56,7 +58,18 @@ New-Item -ItemType Directory -Path $work | Out-Null
 $unsigned = Join-Path $work 'unsigned.apk'
 $aligned = Join-Path $work 'aligned.apk'
 
-apktool b -f $SourceDir -o $unsigned
+# Call apktool.jar directly — Windows apktool.bat pauses when launched with cmd /c.
+$apktoolJar = @(
+    'C:\Windows\apktool.jar',
+    (Join-Path $env:LOCALAPPDATA 'apktool\apktool.jar'),
+    'C:\apktool\apktool.jar'
+) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+if ($apktoolJar) {
+    & java -jar $apktoolJar b -f $SourceDir -o $unsigned
+} else {
+    # Fallback: avoid /c so bat won't pause
+    cmd /c "apktool b -f `"$SourceDir`" -o `"$unsigned`" < nul"
+}
 if ($LASTEXITCODE -ne 0) { throw 'apktool build failed' }
 
 & "$sdk/zipalign.exe" -f -p 4 $unsigned $aligned
