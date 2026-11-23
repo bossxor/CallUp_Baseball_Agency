@@ -104,6 +104,10 @@ function DriveNegoOrTut([string]$j, $t) {
     if (TapText '협상하기' 1000) { return $true }
     return $false
   }
+  if (Has $t '파견하기를 눌러|파견하기') {
+    if (TapText '파견하기' 1200) { return $true }
+    return $false
+  }
   if (Has $t '받아치기|협상 기술|단장의|예상 시세|느긋함') {
     # mid-nego: try accept / play card / next
     if (TapText '다음' 700) { return $true }

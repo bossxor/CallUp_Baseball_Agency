@@ -50,8 +50,6 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-shooting-narrative failed' }
     node (Join-Path $PSScriptRoot 'fix-kill-ad-popup.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-kill-ad-popup failed' }
-    node (Join-Path $PSScriptRoot 'fix-skip-tut.cjs')
-    if ($LASTEXITCODE -ne 0) { throw 'fix-skip-tut failed' }
     node (Join-Path $PSScriptRoot 'fix-purge-copy-final.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-purge-copy-final failed' }
     node (Join-Path $PSScriptRoot 'fix-purge-copy-final2.cjs')
@@ -60,6 +58,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-purge-kickoff failed' }
     node (Join-Path $PSScriptRoot 'fix-purge-more.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-purge-more failed' }
+    node (Join-Path $PSScriptRoot 'fix-skip-tut.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-skip-tut failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }

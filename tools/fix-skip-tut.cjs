@@ -1,6 +1,7 @@
 /**
- * Personal/CallUp: never block on nego / tip tutorials.
- * Marks nego tip as already seen so pnego overlay never mounts.
+ * Personal/CallUp: never block on tutorials.
+ * - nego tip always considered seen
+ * - Py tutorial overlay auto-finishes (no UI)
  */
 const fs = require("fs");
 const path = require("path");
@@ -14,35 +15,51 @@ const shell = path.join(
   "shell-DaKdX7f1.js"
 );
 let s = fs.readFileSync(shell, "utf8");
-const pairs = [
-  // never start pnego / force-nego path
-  ['!jc(t,"nego")', "!1"],
-  // tut foot always has next (no pure wait-only block) — keep act waits but allow skip via smoke
-];
 let n = 0;
-for (const [a, b] of pairs) {
+
+function rep(a, b, label) {
   const c = s.split(a).length - 1;
   if (!c) {
-    console.log("MISS", a);
-    continue;
+    console.log("MISS", label || a.slice(0, 60));
+    return;
   }
   s = s.split(a).join(b);
   n += c;
-  console.log("patched", c, "x", a.slice(0, 40));
+  console.log("patched", c, "x", label || a.slice(0, 40));
 }
-// Auto-mark tips.nego when tutDone flips true (home tut finish)
-const needle =
-  'G==="new"||G==="pro"?(R().tutDone=!0,ua(R(),"scout"),xe("home"))';
-const repl =
-  'G==="new"||G==="pro"?(R().tutDone=!0,ua(R(),"scout"),ua(R(),"nego"),xe("home"))';
-if (s.includes(needle)) {
-  s = s.replace(needle, repl);
-  n++;
-  console.log("patched tutDone+nego tip");
-} else if (s.includes(repl)) {
-  console.log("already tutDone+nego tip");
+
+// never start pnego / force-nego path
+rep('!jc(t,"nego")', "!1", "jc nego gate");
+
+// mark nego tip when home tut would finish (if still using Py)
+rep(
+  'G==="new"||G==="pro"?(R().tutDone=!0,ua(R(),"scout"),xe("home"))',
+  'G==="new"||G==="pro"?(R().tutDone=!0,ua(R(),"scout"),ua(R(),"nego"),xe("home"))',
+  "tutDone+nego tip"
+);
+// already-patched form
+if (s.includes('ua(R(),"scout"),ua(R(),"nego"),xe("home")')) {
+  console.log("ok tutDone+nego tip present");
+}
+
+// Auto-finish ANY tutorial mode — run onDone side effects, render null
+const pyMount =
+  'G&&e.jsx(Py,{mode:G,onDone:()=>{G==="new"||G==="pro"?(R().tutDone=!0,ua(R(),"scout"),ua(R(),"nego"),xe("home")):G==="pnego"?ua(R(),"nego"):G==="replay"?xe("office"):ua(R(),G),de(!1),ke(),U()}})';
+const pyAuto =
+  'G&&(G==="new"||G==="pro"?(R().tutDone=!0,ua(R(),"scout"),ua(R(),"nego"),xe("home")):G==="pnego"||G==="nego"?(ua(R(),"nego")):G==="replay"?xe("office"):(ua(R(),G),void 0),de(!1),ke(),U(),null)';
+if (s.includes(pyAuto)) {
+  console.log("already py auto-skip");
 } else {
-  console.log("MISS tutDone onDone");
+  rep(pyMount, pyAuto, "py auto-skip");
 }
+
+// Tip bubbles (Yh / S5): never show
+const s5from =
+  "function S5({id:s}){const[t,a]=p.useState(()=>!jc(R(),s));if(!t||lr())return null;";
+const s5to =
+  "function S5({id:s}){const[t,a]=p.useState(()=>!jc(R(),s));if(1||!t||lr())return null;";
+if (s.includes(s5to)) console.log("already S5 tip suppress");
+else rep(s5from, s5to, "S5 tip suppress");
+
 fs.writeFileSync(shell, s);
 console.log("fix-skip-tut done", n);
