@@ -18,7 +18,12 @@ $patterns = @(
     @{ Name = 'ability_gk'; Regex = 'stat:\{gk:|"gk":|\.gk(?=[^A-Za-z]|$)|B8=\{[^}]*gk:' },
     @{ Name = 'hattrick'; Regex = 'hattrick' },
     @{ Name = 'SignHere'; Regex = 'Sign Here|SignHere|사인히어|Football Agent|Football Agency' },
-    @{ Name = '축구에이전'; Regex = '축구 에이전|풋볼 에이전' }
+    @{ Name = '축구에이전'; Regex = '축구 에이전|풋볼 에이전' },
+    @{ Name = 'debut_goal'; Regex = '데뷔골|프로 첫 골' },
+    @{ Name = 'GOAL_badge'; Regex = 'children:"GOAL"|\"GOAL!\"' },
+    @{ Name = 'striker'; Regex = '스트라이커' },
+    @{ Name = 'Football_word'; Regex = '(?<![A-Za-z])Football(?![A-Za-z])' },
+    @{ Name = '축구_word'; Regex = '축구' }
 )
 
 $files = @()
