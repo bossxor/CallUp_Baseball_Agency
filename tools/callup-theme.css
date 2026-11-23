@@ -222,10 +222,7 @@ button.opt.r {
 .sr-card.on {
   animation: callupPageFlip 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
-@keyframes callupPageFlip {
-  0% { transform: perspective(800px) rotateX(55deg) translateY(24px); opacity: 0.4; }
-  100% { transform: perspective(800px) rotateX(0) translateY(0); opacity: 1; }
-}
+/* callupPageFlip keyframes: see PAGEFLIP_BOOK_Y block (rotateY) */
 
 .mo-crest-t, .ttl, .title-hand, .spk-sig {
   font-family: var(--f-num) !important;
@@ -250,7 +247,7 @@ section.personal-cheats {
 }
 
 
-/* PAGEFLIP_HIT_BOTTOM */
+
 /* Hit zone: bottom of report (UX says grab below & flip up) */
 .spk-band2 {
   top: auto !important;
@@ -277,4 +274,55 @@ section.personal-cheats {
 .spk-tip {
   z-index: 13 !important;
   pointer-events: none !important;
+}
+
+
+/* PAGEFLIP_BOOK_Y */
+/* Book page-turn: grab right edge, rotateY around left spine */
+.spk.big,
+.spk.big.in {
+  transform-style: preserve-3d !important;
+  perspective: 1200px !important;
+}
+.spk-base {
+  transform-origin: 0% 50% !important;
+  transform-style: preserve-3d !important;
+  backface-visibility: hidden;
+  box-shadow:
+    8px 12px 28px -10px rgba(0, 0, 0, 0.45),
+    inset -1px 0 0 rgba(0, 0, 0, 0.06) !important;
+}
+.spk.lifting .spk-base {
+  filter: drop-shadow(-10px 8px 18px rgba(0, 0, 0, 0.28));
+}
+.spk-band2 {
+  top: 0 !important;
+  bottom: 0 !important;
+  left: auto !important;
+  right: -8px !important;
+  width: 48% !important;
+  height: auto !important;
+  z-index: 12 !important;
+  touch-action: none !important;
+}
+.spk-grab {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  touch-action: none;
+}
+.spk.cut .spk-grab,
+.spk.pageflip .spk-grab,
+.spk.cut .spk-band2 {
+  pointer-events: none;
+}
+.spk-tip {
+  top: auto !important;
+  bottom: 10px !important;
+  z-index: 13 !important;
+  pointer-events: none !important;
+}
+@keyframes callupPageFlip {
+  0% { transform: perspective(1200px) rotateY(70deg); opacity: 0.35; }
+  100% { transform: perspective(1200px) rotateY(0); opacity: 1; }
 }

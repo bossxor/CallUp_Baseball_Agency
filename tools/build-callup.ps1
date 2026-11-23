@@ -34,6 +34,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'patch-baseball-sim failed' }
     node (Join-Path $PSScriptRoot 'fix-pageflip-hit.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-pageflip-hit failed' }
+    node (Join-Path $PSScriptRoot 'fix-pageflip-book.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-pageflip-book failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.js') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }
