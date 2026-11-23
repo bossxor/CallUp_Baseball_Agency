@@ -31,8 +31,9 @@
 | 기록 UI `st.h`/`st.rbi` | PASS (셸 집계·카피) |
 | 리포트 책넘김 `rotateY` | PASS (코드) |
 | 등록 로고 Xs 야구 SVG | PASS (코드, callup.13) |
-| 기기 새게임→홈→4주→저장 | **대기** (폰 미연결) |
-| 구 세이브 로드 거부 실기기 | **대기** |
+| 기기 새게임→홈→4주→저장 | **부분** — callup.13 설치·타이틀·등록(로고)까지 확인 후 USB ADB 단절. 재연결 후 `tools/smoke-phase-b.ps1` |
+| 구 세이브 로드 거부 실기기 | **대기** (ADB 단절) |
+| B1 assert 유닛 (`tools/test-b1-assert.cjs`) | PASS (오프라인) |
 
 ## B1 동작
 
