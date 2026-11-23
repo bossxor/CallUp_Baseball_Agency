@@ -62,6 +62,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-skip-tut failed' }
     node (Join-Path $PSScriptRoot 'fix-load-assert.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-load-assert failed' }
+    node (Join-Path $PSScriptRoot 'fix-deadline-midnight.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-deadline-midnight failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }
