@@ -36,6 +36,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-pageflip-hit failed' }
     node (Join-Path $PSScriptRoot 'fix-pageflip-book.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-pageflip-book failed' }
+    node (Join-Path $PSScriptRoot 'fix-phase-b-offline.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-phase-b-offline failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.js') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }
