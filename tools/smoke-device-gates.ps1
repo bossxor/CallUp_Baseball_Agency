@@ -177,18 +177,19 @@ for ($i=0; $i -lt 30; $i++) {
   Tap 720 2850 600
 }
 Shot 'dg-04-tut-clear.png'
-$t0 = Texts
-$date0 = ($t0 | Where-Object { $_ -match '\d{4}\.\d{2}\.\d{2}' } | Select-Object -First 1)
+# prefer date captured at HOME_READY (mission popups can hide header later)
+$date0 = ($t | Where-Object { $_ -match '\d{4}\.\d{2}\.\d{2}' } | Select-Object -First 1)
 if (-not $date0) {
-  # fallback from earlier home-ish line
-  $date0 = ($t | Where-Object { $_ -match '\d{4}\.\d{2}\.\d{2}' } | Select-Object -First 1)
+  $t0 = Texts
+  $date0 = ($t0 | Where-Object { $_ -match '\d{4}\.\d{2}\.\d{2}' } | Select-Object -First 1)
 }
+# normalize to YYYY.MM.DD token only
+if ($date0 -match '(\d{4}\.\d{2}\.\d{2})') { $date0 = $Matches[1] }
 Write-Host "DATE0=$date0"
 
 # advance weeks — center tab (.tabs .mid) is the week button; dismiss goal/mission first
 $weekAdvanced = $false
-$week0 = $null
-if ($date0 -match '(\d{4})\.(\d{2})\.(\d{2})') { $week0 = $date0 }
+$week0 = $date0
 for ($w=1; $w -le 24; $w++) {
   $j = Lay
   $t = Texts $j
@@ -205,10 +206,12 @@ for ($w=1; $w -le 24; $w++) {
     Shot ("dg-05-week{0:D2}.png" -f $w)
     $t = Texts
     $date = ($t | Where-Object { $_ -match '\d{4}\.\d{2}\.\d{2}' } | Select-Object -First 1)
-    Write-Host ("week{0} DATE={1} sample={2}" -f $w, $date, (($t | Select-Object -First 8) -join ' / '))
-    if ($week0 -and $date -and ($date -ne $week0)) {
+    $dateN = $null
+    if ($date -match '(\d{4}\.\d{2}\.\d{2})') { $dateN = $Matches[1] }
+    Write-Host ("week{0} DATE={1} sample={2}" -f $w, $dateN, (($t | Select-Object -First 8) -join ' / '))
+    if ($week0 -and $dateN -and ($dateN -ne $week0)) {
       $weekAdvanced = $true
-      Write-Host "WEEK_ADVANCE_OK $week0 -> $date"
+      Write-Host "WEEK_ADVANCE_OK $week0 -> $dateN"
       break
     }
   }
