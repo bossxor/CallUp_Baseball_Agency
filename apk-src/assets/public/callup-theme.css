@@ -125,16 +125,28 @@ body,
   font-weight: 500 !important;
 }
 .ti-glass .field input,
-.ti-glass .field select {
-  color: var(--ink) !important;
+.ti-glass .field select,
+.field input,
+.field select {
+  color: #1b2a20 !important;
+  -webkit-text-fill-color: #1b2a20 !important;
+  caret-color: #1b2a20 !important;
+  opacity: 1 !important;
   background: #ffffff !important;
-  border: 1px solid var(--line2) !important;
-  border-color: var(--line2) !important;
+  border: 1px solid #bfcab8 !important;
+  border-color: #bfcab8 !important;
+  box-shadow: none !important;
 }
 .ti-glass .field input:focus,
-.ti-glass .field select:focus {
-  border-color: var(--accent) !important;
+.ti-glass .field select:focus,
+.field input:focus,
+.field select:focus {
+  border-color: #2f7d4a !important;
   box-shadow: 0 0 0 3px rgba(47, 125, 74, 0.18) !important;
+}
+.ti-form,
+.ti-glass {
+  color: #1b2a20 !important;
 }
 .ti-logos button {
   opacity: 1 !important;
