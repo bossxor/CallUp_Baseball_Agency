@@ -449,3 +449,14 @@ section.personal-cheats {
   z-index: 13 !important;
   pointer-events: none !important;
 }
+
+/* CALLUP_CLUB_NICK */
+.callup-club-nick { margin-top: 8px; display: grid; gap: 10px; }
+.callup-club-nick-ta {
+  width: 100%; min-height: 200px; font-family: inherit; font-size: 13px;
+  padding: 10px; border-radius: var(--r-md, 10px);
+  border: 1px solid color-mix(in srgb, var(--line, #ccc) 80%, transparent);
+  background: var(--panel2, #f8f8f8); color: var(--ink, #111);
+  resize: vertical;
+}
+.callup-club-nick-actions { display: flex; gap: 8px; flex-wrap: wrap; }

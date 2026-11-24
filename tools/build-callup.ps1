@@ -64,6 +64,24 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-load-assert failed' }
     node (Join-Path $PSScriptRoot 'fix-deadline-midnight.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-deadline-midnight failed' }
+    node (Join-Path $PSScriptRoot 'fix-clubs-baseball.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-clubs-baseball failed' }
+    node (Join-Path $PSScriptRoot 'fix-club-rename.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-club-rename failed' }
+    node (Join-Path $PSScriptRoot 'fix-salary-annual.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-salary-annual failed' }
+    node (Join-Path $PSScriptRoot 'fix-clauses-baseball.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-clauses-baseball failed' }
+    node (Join-Path $PSScriptRoot 'fix-calendar-baseball.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-calendar-baseball failed' }
+    node (Join-Path $PSScriptRoot 'fix-intl-baseball.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-intl-baseball failed' }
+    node (Join-Path $PSScriptRoot 'fix-terms-baseball.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-terms-baseball failed' }
+    node (Join-Path $PSScriptRoot 'fix-offseason-camp.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-offseason-camp failed' }
+    powershell -NoProfile -File (Join-Path $PSScriptRoot 'check-soccer-residual.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'check-soccer-residual failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
 }
