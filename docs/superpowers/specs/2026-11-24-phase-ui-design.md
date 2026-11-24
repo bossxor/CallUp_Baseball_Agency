@@ -1,7 +1,7 @@
 # Phase UI — CallUp 비주얼·홈 리브랜드 설계
 
 **날짜:** 2026-11-24  
-**상태:** 초안 (인간 리뷰 대기)  
+**상태:** 승인 · 구현 플랜 `plans/2026-11-24-phase-ui.md`  
 **선행:** Residual packages + worldgen fix (`0.1.0-callup.29` / vc144, commit `b048deb`)  
 **후행:** 기존 Phase C (드래프트·시즌후 연봉 등) — **본 단계 완료 후**  
 **상위:** [new-game-roadmap-design.md](2026-11-23-new-game-roadmap-design.md) (본 스펙 반영으로 Phase UI 삽입)
