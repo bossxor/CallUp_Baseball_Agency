@@ -327,7 +327,8 @@ function leaguesNeedPatch(text) {
 }
 
 const Y0_COLLAPSED =
-  'y0={한국:{pools:["kr"],cont:"AS",w:5,t:1.15},일본:{pools:["jp"],cont:"AS",w:5,t:1.15},대만:{pools:["tw"],cont:"AS",w:3,t:1.05},미국:{pools:["us"],cont:"NA",w:4,t:1.1},대한민국:{pools:["kr"],cont:"AS",w:5,t:1.15}}';
+  // name pools must exist in names-*.js (no tw/us → cn/en)
+  'y0={한국:{pools:["kr"],cont:"AS",w:5,t:1.15},일본:{pools:["jp"],cont:"AS",w:5,t:1.15},대만:{pools:["cn"],cont:"AS",w:3,t:1.05},미국:{pools:["en"],cont:"NA",w:4,t:1.1},대한민국:{pools:["kr"],cont:"AS",w:5,t:1.15}}';
 
 const COPY_PAIRS = [
   ["한국 아마추어", "한국 2군"],
@@ -432,12 +433,20 @@ if (needsWc) {
   console.log("wc already baseball");
 }
 
+function isSafeClubToken(k) {
+  if (!k || k.length < 4) return false;
+  // Never global-replace short Latin codes (UTC→city ate Date.UTC; KR ate KRW).
+  if (/^[A-Za-z0-9ÁÉÍÓÚáéíóúÍí]{1,4}$/.test(k)) return false;
+  return true;
+}
+
 if (needsWc) {
   const keyMap = new Map();
   for (let i = 0; i < oldPairs.length; i++) {
     const city = ordered[i % ordered.length];
-    keyMap.set(oldPairs[i][0], city);
-    keyMap.set(oldPairs[i][1], city);
+    const [ok, ov] = oldPairs[i];
+    if (isSafeClubToken(ok)) keyMap.set(ok, city);
+    if (isSafeClubToken(ov)) keyMap.set(ov, city);
   }
   const keysByLen = [...keyMap.keys()].sort((a, b) => b.length - a.length);
   for (const oldK of keysByLen) {

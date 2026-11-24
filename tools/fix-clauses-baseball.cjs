@@ -40,7 +40,7 @@ function rep(file, oldStr, newStr, label, bucket = "eng") {
 
 const ENGINE = [
   [
-    'L_={sellOn:{label:"셀온",gain:"다시 팔가오슝 때 차익 일부가 에이전시로 (한 번)",cost:"이번 계약금가 꽤 깎여요",pat:32,base:.75},buyout:{label:"바이아웃"',
+    'L_={sellOn:{label:"셀온",gain:"다시 팔릴 때 차익 일부가 에이전시로 (한 번)",cost:"이번 계약금가 꽤 깎여요",pat:32,base:.75},buyout:{label:"바이아웃"',
     `L_={${MARK}buyout:{label:"위약금"`,
     "L_-buyout-label",
   ],
