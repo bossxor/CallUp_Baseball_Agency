@@ -202,6 +202,8 @@ Phase C 플레이 로직, 전 에셋 일괄, 라이트 테마.
 | `apk-fork-inventory.md` | 포크 구조·안전 모드 한계 |
 | **본 로드맵** | A/B/Residual/UI/C 순서·게이트·비범위 |
 | `2026-11-24-phase-ui-design.md` | Phase UI 상세 |
+| `2026-11-25-phase-c-design.md` | Phase C 상세 |
+| `2026-11-25-full-design-plan-index.md` | 전체 설계·플랜 인덱스 |
 | `docs/superpowers/plans/YYYY-MM-DD-*.md` | 단계 구현 플랜 |
 
 충돌 시: 플레이 규칙은 game-design, 저장·주차는 implementation-design, **포크 단계 순서·게이트는 본 문서**.
