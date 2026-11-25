@@ -597,3 +597,48 @@ section.personal-cheats {
   font-weight: 600 !important;
   color: var(--sub) !important;
 }
+
+/* CALLUP_HOME_FEED */
+/* Home: vertical feed (no horizontal swipe stack) */
+.hs.callup-home,
+.hs {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+.hs-row.callup-feed,
+.hs-row {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scroll-snap-type: y proximity !important;
+  margin: 0 !important;
+  padding: 4px 0 20px !important;
+  scroll-padding: 0 !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+.hs-row.callup-feed .hs-c,
+.hs-c.callup-feed-item,
+.hs-row .hs-c {
+  flex: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  scroll-snap-align: start !important;
+  min-height: 0 !important;
+}
+.hs-row .hs-c * {
+  overscroll-behavior-x: none !important;
+}
+.hs-c.callup-feed-item .hs-img {
+  flex: 0 0 72px !important;
+}
+.hs-c.callup-feed-item .hs-b {
+  padding: 10px 14px 4px !important;
+}
+.hs-c.callup-feed-item .hc-body {
+  padding: 0 14px 14px !important;
+}

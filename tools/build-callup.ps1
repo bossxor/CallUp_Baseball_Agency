@@ -88,6 +88,10 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-theme-dark failed' }
     node (Join-Path $PSScriptRoot 'fix-ui-tab-baseball.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-tab-baseball failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-title-single-save.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-title-single-save failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-home-feed.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-home-feed failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'
