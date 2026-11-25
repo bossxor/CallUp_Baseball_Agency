@@ -92,6 +92,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-title-single-save failed' }
     node (Join-Path $PSScriptRoot 'fix-ui-home-feed.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-home-feed failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-week-gate.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-week-gate failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'
