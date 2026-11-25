@@ -1,0 +1,86 @@
+
+.cheat-panel :is(.cheat-options,.cheat-paired-fields) {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0,1fr);
+  gap: 8px;
+}
+.cheat-panel .cheat-paired-fields {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+}
+.cheat-panel .cheat-options > button {
+  min-width: 0;
+  padding-inline: 4px;
+  line-height: 1.2;
+}
+.cheat-panel :is(.cheat-setting-row,form) {
+  border: 1px solid color-mix(in srgb,currentColor 19%,transparent);
+  border-radius: 10px;
+  padding: 10px;
+  min-width: 0;
+}
+.cheat-panel .cheat-setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.cheat-panel .cheat-setting-row > b { text-wrap: balance; }
+.cheat-panel button[aria-pressed="true"] {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.cheat-panel .cheat-toggle {
+  display: grid;
+  place-items: center;
+  border: 0;
+  min-width: 62px;
+  padding: 0 6px;
+  background: transparent;
+  color: inherit;
+}
+.cheat-toggle-track {
+  width: 50px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb,currentColor 40%,transparent);
+  background: color-mix(in srgb,currentColor 18%,transparent);
+}
+.cheat-toggle-track::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  border-radius: 50%;
+  transition: transform .16s ease-out;
+}
+.cheat-toggle[aria-checked="true"] .cheat-toggle-track {
+  color: #141516;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.cheat-toggle[aria-checked="true"] .cheat-toggle-track::before { transform: translateX(22px); }
+@media (prefers-reduced-motion: reduce) {
+  .cheat-toggle-track::before { transition: none; }
+}
+
+
+.cheat-panel .cheat-preset-save {
+  border-top: 1px solid color-mix(in srgb, currentColor 19%, transparent);
+}
+.cheat-panel .cheat-preset-save summary {
+  padding: 12px 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.cheat-panel .cheat-preset-save[open] label { margin-bottom: 8px; }
+.cheat-panel .cheat-preset-save > button { width: 100%; }
+

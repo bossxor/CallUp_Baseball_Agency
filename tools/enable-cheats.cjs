@@ -6,7 +6,12 @@ const publicDir = path.join(root, "assets/public");
 const shellPath = path.join(publicDir, "assets/shell-DaKdX7f1.js");
 
 // Restore cheat CSS (was removed earlier)
-fs.copyFileSync("T:/cheat-panel.css", path.join(publicDir, "cheats.css"));
+const cheatCss = path.join(__dirname, "cheat-panel.css");
+if (!fs.existsSync(cheatCss)) {
+  console.error("MISS tools/cheat-panel.css");
+  process.exit(1);
+}
+fs.copyFileSync(cheatCss, path.join(publicDir, "cheats.css"));
 console.log("cheats.css restored");
 
 // Ensure index links cheats.css before theme

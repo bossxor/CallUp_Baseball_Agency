@@ -1,8 +1,8 @@
 ﻿param(
     [string]$SourceDir = (Join-Path $PSScriptRoot '..\apk-src'),
     [string]$OutputApk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
-    [int]$VersionCode = 110,
-    [string]$VersionName = '0.1.0-callup.1',
+    [int]$VersionCode = 156,
+    [string]$VersionName = '0.1.0-callup.41',
     [switch]$SkipPatch
 )
 
@@ -104,6 +104,10 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-brand-logo failed' }
     node (Join-Path $PSScriptRoot 'fix-ui-logo-default.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-logo-default failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-player-skin.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-player-skin failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-face-callup.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-face-callup failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'
