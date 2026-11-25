@@ -642,3 +642,75 @@ section.personal-cheats {
 .hs-c.callup-feed-item .hc-body {
   padding: 0 14px 14px !important;
 }
+
+/* CALLUP_LEGEND_HOLD */
+/* Legend: hold fill more visible on dark amber */
+.card.k-legend .opt .chg,
+.news .card.k-legend .opt .chg {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--tier-legend) 35%, transparent),
+    color-mix(in srgb, var(--tier-legend) 85%, transparent)
+  ) !important;
+}
+.card.k-legend .opt {
+  min-height: 48px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.card.k-legend .opt.on {
+  color: var(--accent-ink) !important;
+  background: var(--fill-accent) !important;
+}
+
+/* CALLUP_NEGO_CONTRAST */
+/* Nego: high contrast on dark charcoal + amber */
+.nego {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+.nego .nh {
+  background: var(--panel) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+.nego .nh .nm,
+.nego .nh b,
+.nego .nh .ttl,
+.nego .nh h1,
+.nego .nh .h1 {
+  color: var(--ink) !important;
+  text-shadow: none !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--ink) !important;
+}
+.nego .nh .sub,
+.nego .nh small {
+  color: var(--body) !important;
+}
+.nego .btn,
+.nego button.btn,
+.nego .hcd,
+.nego .chip {
+  min-height: 44px !important;
+}
+.nego .btn.go,
+.nego button.go {
+  background: var(--fill-accent) !important;
+  color: var(--accent-ink) !important;
+  box-shadow: var(--sh-accent) !important;
+  font-weight: 700 !important;
+}
+.nego .hand .hcd {
+  background: var(--panel2) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--sh-panel) !important;
+}
+.nego .say,
+.nego .bubble {
+  background: var(--panel2) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+}

@@ -94,6 +94,10 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-home-feed failed' }
     node (Join-Path $PSScriptRoot 'fix-ui-week-gate.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-week-gate failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-legend-hold.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-legend-hold failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-nego-contrast.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-nego-contrast failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'
