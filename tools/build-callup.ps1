@@ -84,6 +84,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'check-soccer-residual failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-theme-dark.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-theme-dark failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'

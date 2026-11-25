@@ -50,10 +50,16 @@ console.log("wrote callup-theme.css");
   if (css.includes(oldRoot)) css = css.replace(oldRoot, newRoot);
   else if (
     !css.includes("--bg: #0A1628") &&
-    !css.includes("--bg: #F2F5EF")
+    !css.includes("--bg: #F2F5EF") &&
+    !css.includes("--bg: #12151A")
   ) {
     throw new Error("shell CSS :root block missing");
   }
+  // Phase UI dark amber already applied — skip navy remap of accent greens
+  if (css.includes("--bg: #12151A")) {
+    write(cssPath, css);
+    console.log("shell CSS already CallUp dark amber");
+  } else {
   css = replaceAll(css, "rgba(197, 242, 60,", "rgba(240, 199, 94,");
   css = replaceAll(css, "#C5F23C", "#F0C75E");
   css = replaceAll(css, "#E2FB8A", "#FFE08A");
@@ -70,6 +76,7 @@ console.log("wrote callup-theme.css");
   css = replaceAll(css, "#141516", "#0A1628");
   write(cssPath, css);
   console.log("patched shell CSS");
+  }
 }
 
 /** Branding + title — safe everywhere */

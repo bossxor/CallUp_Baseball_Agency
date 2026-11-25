@@ -1,94 +1,100 @@
-/* CallUp — bright daylight baseball office. Distinct from SignHere dark foil. */
+/* CallUp — dark charcoal + warm amber leather. Agency desk, high contrast. */
 :root {
   --sat: env(safe-area-inset-top, 0px);
-  --bg: #F2F5EF;
-  --bg2: #E6EBE2;
-  --panel: #FFFFFF;
-  --panel2: #F7FAF4;
-  --panel3: #EEF3EA;
-  --line: #D3DCCE;
-  --line2: #BFCAB8;
-  --ink: #1B2A20;
-  --body: #3A4A40;
-  --sub: #66766C;
-  --dim: #8A978E;
-  --ink2: #2A3A30;
-  --body2: #4A5A50;
-  --dim2: #7A8A80;
-  --sub-tip: #6E7E74;
-  --accent: #2F7D4A;
-  --accent-ink: #FFFFFF;
-  --accent-soft: rgba(47, 125, 74, 0.12);
-  --accent-line: rgba(47, 125, 74, 0.4);
-  --accent-hi: #4CA86A;
-  --accent-lo: #246B3C;
-  --fill-accent: linear-gradient(180deg, var(--accent-hi) 0%, var(--accent) 50%, var(--accent-lo) 100%);
-  --sh-accent: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.12), 0 6px 12px -6px rgba(47, 125, 74, 0.35);
-  --gold: #B8922E;
-  --gold-ink: #2A1E00;
-  --gold-soft: rgba(184, 146, 46, 0.14);
-  --fill-gold: linear-gradient(180deg, #E8C96A 0%, var(--gold) 50%, #9A7A22 100%);
-  --sh-gold: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 10px -4px rgba(184, 146, 46, 0.35);
+  --bg: #12151A;
+  --bg2: #0E1116;
+  --panel: #1A1F27;
+  --panel2: #222833;
+  --panel3: #2A3140;
+  --line: #333B4A;
+  --line2: #3E4758;
+  --ink: #F2EDE4;
+  --body: #C8C2B8;
+  --sub: #8B857A;
+  --dim: #5E5952;
+  --ink2: #E8E2D8;
+  --body2: #B8B2A8;
+  --dim2: #6E6860;
+  --sub-tip: #9A9488;
+  --accent: #C4924A;
+  --accent-ink: #1A1208;
+  --accent-soft: rgba(196, 146, 74, 0.16);
+  --accent-line: rgba(196, 146, 74, 0.45);
+  --accent-hi: #D4A85C;
+  --accent-lo: #A67A38;
+  --fill-accent: linear-gradient(180deg, var(--accent-hi) 0%, var(--accent) 52%, var(--accent-lo) 100%);
+  --sh-accent: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -2px 0 rgba(0, 0, 0, 0.28), 0 6px 14px -6px rgba(196, 146, 74, 0.4);
+  --gold: #C4924A;
+  --gold-ink: #1A1208;
+  --gold-soft: rgba(196, 146, 74, 0.16);
+  --fill-gold: linear-gradient(180deg, #D4A85C 0%, var(--gold) 50%, #A67A38 100%);
+  --sh-gold: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 10px -4px rgba(196, 146, 74, 0.35);
   --fill-panel: var(--panel);
   --sh-panel: inset 0 0 0 1px var(--line);
-  --fill-btn: linear-gradient(180deg, #FFFFFF 0%, var(--panel2) 100%);
-  --sh-btn: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 5px rgba(28, 42, 32, 0.08);
-  --fill-sel: rgba(47, 125, 74, 0.1);
-  --zebra: #EAF0E6;
-  --paper: #FFFDF8;
-  --paper-ink: #1B2A20;
-  --up: #2F7D4A;
-  --down: #C45B4A;
-  --blue: #3D7AB5;
-  --good: #2F7D4A;
-  --bad: #C45B4A;
-  --warn: #C4922E;
-  --tag-good: #2F7D4A;
-  --tag-good-bg: rgba(47, 125, 74, 0.12);
-  --tag-bad: #C45B4A;
-  --tag-bad-bg: rgba(196, 91, 74, 0.12);
-  --say: #1B2A20;
-  --say-ink: #FFFFFF;
-  --f-disp: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  --f-num: "IBM Plex Mono", "Noto Sans KR", monospace;
+  --fill-btn: linear-gradient(180deg, var(--panel2) 0%, var(--panel) 100%);
+  --sh-btn: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --fill-sel: rgba(196, 146, 74, 0.14);
+  --zebra: #181C24;
+  --paper: #1E2430;
+  --paper-ink: #F2EDE4;
+  --up: #6BBF7A;
+  --down: #D46B5C;
+  --blue: #5A8FC4;
+  --good: #6BBF7A;
+  --bad: #D46B5C;
+  --warn: #C4924A;
+  --tag-good: #6BBF7A;
+  --tag-good-bg: rgba(107, 191, 122, 0.14);
+  --tag-bad: #D46B5C;
+  --tag-bad-bg: rgba(212, 107, 92, 0.14);
+  --say: #F2EDE4;
+  --say-ink: #12151A;
+  --tier-common: #8B857A;
+  --tier-rare: #5A8FC4;
+  --tier-unique: #9B7EC8;
+  --tier-epic: #D46B5C;
+  --tier-legend: #E0B05C;
+  --f-disp: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-num: "IBM Plex Mono", "Pretendard", "Noto Sans KR", monospace;
   --f-mono: "IBM Plex Mono", monospace;
-  --f-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-body: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 
 html,
 body,
 .app {
-  background: #F2F5EF !important;
+  background: #12151A !important;
   color: var(--ink);
+  font-family: var(--f-body);
 }
 
-/* Soften SignHere neon/dark chrome — keep readable, not ghostly */
 .mo,
 .mo-rays:before {
   filter: none !important;
-  opacity: 0.55 !important;
+  opacity: 0.35 !important;
 }
 
-/* Tutorial tips: bright theme — dark bub + dark ink = invisible */
 .tut {
-  --tut-bub: #ffffff !important;
+  --tut-bub: #1a1f27 !important;
 }
 .tut-bub {
-  background: #ffffff !important;
+  background: var(--panel) !important;
   color: var(--ink) !important;
   box-shadow:
     inset 0 0 0 1px var(--line),
-    0 16px 40px rgba(28, 42, 32, 0.18) !important;
+    0 16px 40px rgba(0, 0, 0, 0.45) !important;
 }
 .tut-bub.above:after,
 .tut-bub.below:after {
-  background: #ffffff !important;
+  background: var(--panel) !important;
 }
 .tut-nm b {
   color: var(--ink) !important;
+  font-weight: 800 !important;
 }
 .tut-nm small {
   color: var(--sub) !important;
+  font-weight: 600 !important;
 }
 .tut-bub p {
   color: var(--body) !important;
@@ -97,9 +103,9 @@ body,
   color: var(--sub) !important;
 }
 .tut-wait {
-  color: var(--accent-lo) !important;
-  background: rgba(47, 125, 74, 0.12) !important;
-  border: 1px solid rgba(47, 125, 74, 0.35) !important;
+  color: var(--accent-hi) !important;
+  background: var(--accent-soft) !important;
+  border: 1px solid var(--accent-line) !important;
 }
 .tut-wait:before {
   background: var(--accent) !important;
@@ -109,12 +115,11 @@ body,
   color: var(--accent-ink) !important;
 }
 
-/* Registration glass + logos were washed out on bright theme */
 .ti-glass {
-  background: #ffffff !important;
+  background: var(--panel) !important;
   box-shadow:
     inset 0 0 0 1px var(--line),
-    0 12px 28px rgba(28, 42, 32, 0.12) !important;
+    0 12px 28px rgba(0, 0, 0, 0.4) !important;
 }
 .ti-glass .field label {
   color: var(--body) !important;
@@ -128,29 +133,29 @@ body,
 .ti-glass .field select,
 .field input,
 .field select {
-  color: #1b2a20 !important;
-  -webkit-text-fill-color: #1b2a20 !important;
-  caret-color: #1b2a20 !important;
+  color: var(--ink) !important;
+  -webkit-text-fill-color: var(--ink) !important;
+  caret-color: var(--accent) !important;
   opacity: 1 !important;
-  background: #ffffff !important;
-  border: 1px solid #bfcab8 !important;
-  border-color: #bfcab8 !important;
+  background: var(--panel2) !important;
+  border: 1px solid var(--line2) !important;
+  border-color: var(--line2) !important;
   box-shadow: none !important;
 }
 .ti-glass .field input:focus,
 .ti-glass .field select:focus,
 .field input:focus,
 .field select:focus {
-  border-color: #2f7d4a !important;
-  box-shadow: 0 0 0 3px rgba(47, 125, 74, 0.18) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
 }
 .ti-form,
 .ti-glass {
-  color: #1b2a20 !important;
+  color: var(--ink) !important;
 }
 .ti-logos button {
   opacity: 1 !important;
-  background: #ffffff !important;
+  background: var(--panel2) !important;
   border: 1px solid var(--line) !important;
   box-shadow: none !important;
 }
@@ -169,10 +174,10 @@ body,
   border-radius: 14px !important;
 }
 
-/* Title: bright field, no night stadium clone */
 .ti-logo,
 .title {
   color: var(--ink) !important;
+  font-weight: 800 !important;
 }
 .ti-sub {
   color: var(--accent) !important;
@@ -183,17 +188,15 @@ body,
 .ti-logo img,
 img[src*="emblem"] {
   border-radius: 18px !important;
-  box-shadow: 0 10px 28px rgba(28, 42, 32, 0.12) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
   filter: none !important;
 }
-/* TITLE_SWOOSH_HIDE */
 .ti-sign,
 .ti-sig,
 .ti-swoosh {
   display: none !important;
 }
 
-/* Club crests — hue-shift away from SignHere soccer badge palette */
 img[src*="/crests/"],
 img[src*="crests/"],
 .pcd-crest img,
@@ -201,38 +204,35 @@ img[src*="crests/"],
 i.pcd-crest,
 .pcd-crest,
 [class*="crest"] img {
-  filter: hue-rotate(118deg) saturate(0.9) contrast(1.06) !important;
+  filter: saturate(0.92) contrast(1.05) brightness(0.95) !important;
 }
 
-/* Scene wash — dull residual soccer art; prefer swapped webps from patch-scenes.js */
 .scene {
-  filter: saturate(0.82) contrast(1.04) !important;
+  filter: saturate(0.78) contrast(1.06) brightness(0.88) !important;
 }
 .scene::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.45;
+  opacity: 0.55;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--bg) 10%, transparent),
-    color-mix(in srgb, #2f7d4a 6%, transparent) 55%,
-    color-mix(in srgb, var(--bg) 16%, transparent)
+    color-mix(in srgb, var(--bg) 35%, transparent),
+    color-mix(in srgb, var(--accent) 8%, transparent) 55%,
+    color-mix(in srgb, var(--bg) 50%, transparent)
   );
 }
 
-/* Story / office cards — paper not neon foil */
 [class*="story"] .card,
 .st-card,
 .sty-cand,
 .sr-arrive {
   background: var(--panel) !important;
-  box-shadow: 0 8px 24px rgba(28, 42, 32, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
   border: 1px solid var(--line) !important;
 }
 
-/* Primary buttons: grass green, not foil gold */
 .opt.r,
 .btn.primary,
 .dd-next,
@@ -240,22 +240,21 @@ button.opt.r {
   background: var(--fill-accent) !important;
   color: var(--accent-ink) !important;
   box-shadow: var(--sh-accent) !important;
+  font-weight: 700 !important;
 }
 
-/* Scout report dossier */
 .spk-in {
-  background: linear-gradient(180deg, #dfe8d8, #c9d6c2) !important;
-  box-shadow: inset 0 1px 0 #fff8, 0 2px 0 #0001 !important;
+  background: linear-gradient(180deg, #2a3140, #1e2430) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 2px 0 rgba(0, 0, 0, 0.35) !important;
 }
 .spk-body {
   background:
-    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(47, 125, 74, 0.06) 28px),
-    linear-gradient(165deg, #fffef9 0%, #f7f1e6 60%, #efe6d6 100%) !important;
+    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(196, 146, 74, 0.06) 28px),
+    linear-gradient(165deg, #222833 0%, #1a1f27 60%, #161a22 100%) !important;
   box-shadow:
-    inset 0 0 0 1px #c5d0b8,
-    0 14px 24px -12px rgba(28, 42, 32, 0.25),
-    6px 10px 0 -2px #eef3ea,
-    6px 10px 0 -1px #c5d0b8 !important;
+    inset 0 0 0 1px var(--line),
+    0 14px 24px -12px rgba(0, 0, 0, 0.5) !important;
+  color: var(--ink) !important;
 }
 .spk-band,
 .spk-band:before,
@@ -277,22 +276,25 @@ button.opt.r {
   animation: none !important;
 }
 .spk-fr {
-  box-shadow: inset 0 0 0 1px rgba(47, 125, 74, 0.25), inset 0 0 0 3px #fffef9 !important;
+  box-shadow: inset 0 0 0 1px var(--accent-line), inset 0 0 0 3px var(--panel2) !important;
 }
 .spk-sig {
-  font: 700 26px/1.05 var(--f-num) !important;
-  letter-spacing: 0.1em !important;
-  color: #1b2a20 !important;
+  font: 800 26px/1.05 var(--f-disp) !important;
+  letter-spacing: 0.08em !important;
+  color: var(--ink) !important;
   transform: none !important;
   text-shadow: none !important;
   top: 148px !important;
 }
 .spk-sub {
-  color: #2f7d4a !important;
+  color: var(--accent) !important;
   letter-spacing: 0.24em !important;
+  font-weight: 700 !important;
   top: 186px !important;
 }
-.spk-rg { color: #4a5a50 !important; }
+.spk-rg {
+  color: var(--sub) !important;
+}
 .spk-tip {
   top: auto !important;
   bottom: 12px !important;
@@ -304,23 +306,38 @@ button.opt.r {
   will-change: transform;
 }
 .spk.lifting .spk-base {
-  filter: drop-shadow(0 -6px 14px rgba(47, 125, 74, 0.2));
+  filter: drop-shadow(0 -6px 14px rgba(196, 146, 74, 0.25));
 }
 .sr-card .sr-face,
 .sr-front {
-  background: linear-gradient(180deg, #fffef9, #f3eee4) !important;
-  color: #1b2a20 !important;
-  box-shadow: inset 0 0 0 1px #c5d0b8, 0 8px 16px -10px rgba(28, 42, 32, 0.2) !important;
-}
-.sr-card.on {
-  animation: callupPageFlip 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) both;
-}
-/* callupPageFlip keyframes: see PAGEFLIP_BOOK_Y block (rotateY) */
-
-.mo-crest-t, .ttl, .title-hand, .spk-sig {
-  font-family: var(--f-num) !important;
+  background: linear-gradient(180deg, var(--panel2), var(--panel)) !important;
+  color: var(--ink) !important;
+  box-shadow: inset 0 0 0 1px var(--line), 0 8px 16px -10px rgba(0, 0, 0, 0.4) !important;
 }
 
+.mo-crest-t,
+.ttl,
+.title-hand,
+.spk-sig {
+  font-family: var(--f-disp) !important;
+}
+
+/* Feed tier accents (Phase UI) */
+.callup-feed-item[data-tier="common"] {
+  border-left: 3px solid var(--tier-common);
+}
+.callup-feed-item[data-tier="rare"] {
+  border-left: 3px solid var(--tier-rare);
+}
+.callup-feed-item[data-tier="unique"] {
+  border-left: 3px solid var(--tier-unique);
+}
+.callup-feed-item[data-tier="epic"] {
+  border-left: 3px solid var(--tier-epic);
+}
+.callup-feed-item[data-tier="legend"] {
+  border-left: 3px solid var(--tier-legend);
+}
 
 /* CHEAT_DEV */
 .personal-cheats .set-h,
@@ -331,12 +348,89 @@ section.personal-cheats {
   border-radius: 12px;
 }
 .cheat-panel {
-  background: color-mix(in srgb, var(--accent) 6%, var(--panel));
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel));
 }
 .cheat-toggle[aria-checked="true"] .cheat-toggle-track {
-  color: #fff !important;
+  color: var(--accent-ink) !important;
   background: var(--accent) !important;
   border-color: var(--accent) !important;
+}
+
+.spk-band2 {
+  top: auto !important;
+  bottom: 0 !important;
+  left: -20px !important;
+  right: -20px !important;
+  height: 55% !important;
+  z-index: 12 !important;
+  touch-action: none !important;
+}
+.spk-grab {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 9;
+  touch-action: none;
+}
+.spk.cut .spk-grab,
+.spk.pageflip .spk-grab {
+  pointer-events: none;
+}
+.spk-tip {
+  z-index: 13 !important;
+  pointer-events: none !important;
+}
+
+.spk.big,
+.spk.big.in {
+  transform-style: preserve-3d !important;
+  perspective: 1200px !important;
+}
+.spk-base {
+  transform-origin: 0% 50% !important;
+  transform-style: preserve-3d !important;
+  backface-visibility: hidden;
+  box-shadow:
+    8px 12px 28px -10px rgba(0, 0, 0, 0.55),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04) !important;
+}
+.spk.lifting .spk-base {
+  filter: drop-shadow(-10px 8px 18px rgba(0, 0, 0, 0.4));
+}
+@keyframes callupPageFlip {
+  0% {
+    transform: perspective(1200px) rotateY(70deg);
+    opacity: 0.35;
+  }
+  100% {
+    transform: perspective(1200px) rotateY(0);
+    opacity: 1;
+  }
+}
+
+.callup-club-nick {
+  margin-top: 8px;
+  display: grid;
+  gap: 10px;
+}
+.callup-club-nick-ta {
+  width: 100%;
+  min-height: 200px;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: var(--r-md, 10px);
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  color: var(--ink);
+  resize: vertical;
+}
+.callup-club-nick-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 
@@ -418,36 +512,6 @@ section.personal-cheats {
 @keyframes callupPageFlip {
   0% { transform: perspective(1200px) rotateY(70deg); opacity: 0.35; }
   100% { transform: perspective(1200px) rotateY(0); opacity: 1; }
-}
-
-
-/* PAGEFLIP_HIT_BOTTOM */
-/* Hit zone: bottom of report (UX says grab below & flip up) */
-.spk-band2 {
-  top: auto !important;
-  bottom: 0 !important;
-  left: -20px !important;
-  right: -20px !important;
-  height: 55% !important;
-  z-index: 12 !important;
-  touch-action: none !important;
-}
-.spk-grab {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 9;
-  touch-action: none;
-}
-.spk.cut .spk-grab,
-.spk.pageflip .spk-grab {
-  pointer-events: none;
-}
-.spk-tip {
-  z-index: 13 !important;
-  pointer-events: none !important;
 }
 
 /* CALLUP_CLUB_NICK */
