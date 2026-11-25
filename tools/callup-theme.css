@@ -524,10 +524,14 @@ section.personal-cheats {
   resize: vertical;
 }
 .callup-club-nick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
 /* CALLUP_TAB_BASEBALL */
-/* Center week CTA: baseball, not SignHere diamond */
-.tabs .mid i{
+/* Center week CTA: baseball sphere — hide house/play/news glyphs in ALL states */
+.tabs .mid i,
+.tabs .mid.go i,
+.tabs .mid.busy i,
+.tabs .mid.dd i,
+.tabs .mid.go.dd i,
+.tabs .mid.news i{
   transform:none !important;
   border-radius:50% !important;
   width:54px !important;
@@ -540,9 +544,14 @@ section.personal-cheats {
     inset 0 0 0 2px rgba(196,146,74,.55) !important;
   position:relative !important;
   overflow:hidden !important;
+  color:transparent !important;
 }
 .tabs .mid i:before,
-.tabs .mid i:after{
+.tabs .mid i:after,
+.tabs .mid.go i:after,
+.tabs .mid.busy i:after,
+.tabs .mid.dd i:after,
+.tabs .mid.go.dd i:after{
   content:"" !important;
   position:absolute !important;
   pointer-events:none !important;
@@ -551,6 +560,8 @@ section.personal-cheats {
   width:120% !important;
   height:120% !important;
   top:-10% !important;
+  right:auto !important;
+  bottom:auto !important;
   left:-10% !important;
   opacity:.9 !important;
   display:block !important;
@@ -559,10 +570,29 @@ section.personal-cheats {
   box-shadow:none !important;
   margin:0 !important;
   rotate:none !important;
+  z-index:1 !important;
 }
 .tabs .mid i:before{ clip-path:inset(0 52% 0 0); transform:translateX(-6%) !important; }
-.tabs .mid i:after{ clip-path:inset(0 0 0 52%); transform:translateX(6%) !important; }
-.tabs .mid i>*{ transform:none !important; color:var(--accent-lo) !important; }
+.tabs .mid i:after,
+.tabs .mid.go i:after,
+.tabs .mid.busy i:after,
+.tabs .mid.dd i:after,
+.tabs .mid.go.dd i:after{
+  clip-path:inset(0 0 0 52%);
+  transform:translateX(6%) !important;
+}
+/* Kill house / play / mid-news glyphs on top of sphere */
+.tabs .mid i>*,
+.tabs .mid i svg,
+.tabs .mid i .mid-news{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  width:0 !important;
+  height:0 !important;
+  overflow:hidden !important;
+  pointer-events:none !important;
+}
 .tabs .mid.go{ color:var(--accent-hi) !important; font-weight:700 !important; }
 .tabs .mid.busy i{ animation:callupSpinBall 1s linear infinite !important; }
 @keyframes callupSpinBall{

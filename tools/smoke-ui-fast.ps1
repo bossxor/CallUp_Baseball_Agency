@@ -74,7 +74,8 @@ try {
     # 새 게임 (probed y≈2600 on 1440x3120)
     Tap 720 2600 2200
     Shot 'ui-fast-01-reg.png'
-    # 시작하기 (probed y≈2300)
+    # pick first logo (contract mark) then 시작하기
+    Tap 280 1980 800
     Tap 720 2300 1500
     Shot 'ui-fast-02-started.png'
 
@@ -84,7 +85,7 @@ try {
     while ([DateTime]::UtcNow -lt $deadline) {
         $i++
         Start-Sleep -Seconds 5
-        # story next / skip / pageflip / mid CTA
+        # story next / skip / pageflip
         Tap 1100 2850 350
         Tap 720 2850 350
         Swipe 1180 1600 360 1600 400
@@ -94,11 +95,14 @@ try {
         if ([DateTime]::UtcNow -ge $deadline.AddSeconds(-8)) { $homeish = $true; break }
     }
 
+    # Mid CTA first tap goes home if not already; second shot captures chrome
+    Tap 720 2950 1200
     Shot 'ui-fast-home.png'
+    Shot 'ui-fast-mid-cta.png'
     if (-not $homeish) {
         Write-Host "WARN: home wait timed out at ${MaxWaitSec}s — review shots"
     } else {
-        Write-Host "OK: finished wait budget — review ui-fast-home.png"
+        Write-Host "OK: finished wait budget — review ui-fast-home.png + mid-cta"
     }
 
     $log = adb -s $script:dev logcat -d -t 80 2>$null |
