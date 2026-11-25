@@ -574,3 +574,26 @@ section.personal-cheats {
   rotate:none !important;
   background:var(--accent-line) !important;
 }
+
+/* CALLUP_TITLE_SINGLE */
+/* Single-save title: hide any leftover slot chrome beyond first */
+.ti-btns .ti-slot:nth-child(n+2),
+.ti-btns > button.ti-new:nth-child(n+2),
+.ti-btns > button.ti-first:nth-child(n+2) {
+  display: none !important;
+}
+.ti-btns {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  max-width: 420px !important;
+  margin: 0 auto !important;
+}
+.ti-slot .ti-cont {
+  min-height: 64px !important;
+  font-weight: 700 !important;
+}
+.ti-del {
+  font-weight: 600 !important;
+  color: var(--sub) !important;
+}
