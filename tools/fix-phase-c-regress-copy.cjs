@@ -85,3 +85,62 @@ function callupTaiwanReferralPick(x,item,choice){
   ['n.ev==="support"?callupSupportPick(x,n,t):', 'n.ev==="support"?callupSupportPick(x,n,t):n.ev==="twReferral"?callupTaiwanReferralPick(x,n,t):'],
 ]);
 console.log("C4 market/copy checks applied.");
+
+// The club badge and league picker share the engine's baseball league names.
+const divisionLabel='n("{tier}부 리그",{tier:';
+patch(shell,"/*CALLUP_C4_LEAGUE_LABELS*/",[
+  [divisionLabel+'t.tier})', 'n(t.name)/*CALLUP_C4_LEAGUE_LABELS*/'],
+  [divisionLabel+'v.tier})', 'n(v.name)'],
+]);
+const leagueNames=["한국 1군","한국 2군","일본 1군","일본 2군","대만 1군","미국 메이저","미국 마이너"];
+for(const [file,oldLabel,labels] of [
+  ["ui-DgYnPcSw.js","Division",["Korea First Team","Korea Second Team","Japan First Team","Japan Second Team","Taiwan First Team","US Major League","US Minor League"]],
+  ["ui-DSX53OnJ.js","División",["Corea · primer equipo","Corea · segundo equipo","Japón · primer equipo","Japón · segundo equipo","Taiwán · primer equipo","EE. UU. · liga mayor","EE. UU. · liga menor"]],
+]){
+  const translations=Object.fromEntries(leagueNames.map((name,index)=>[name,labels[index]]));
+  patch(path.join(assets,file),"/*CALLUP_C4_LEAGUE_LABELS*/",[
+    ['"{tier}부 리그":"'+oldLabel+' {tier}"', JSON.stringify(translations).slice(1,-1)+'/*CALLUP_C4_LEAGUE_LABELS*/'],
+  ]);
+}
+
+const baseballCopy=[
+  ["점유 야구","컨택 중심","Contact Focus","Contacto"],
+  ["역습 야구","주루 중심","Baserunning Focus","Corrida de bases"],
+  ["압박 야구","기동력과 수비","Speed and Fielding","Velocidad y defensa"],
+  ["수비 야구","수비 중심","Defense Focus","Defensa"],
+  ["측면 야구","장타와 주루","Power and Baserunning","Poder y corrida de bases"],
+  ["롱볼 야구","장타 중심","Power Focus","Poder"],
+  ["공격 야구","타격 중심","Hitting Focus","Bateo"],
+  ["실리 야구","장타와 수비","Power and Fielding","Poder y defensa"],
+  ["전술 궁합","팀 스타일 적합도","Team Style Fit","Encaje con el equipo"],
+  ["체격이 아쉽습니다. 세트피스 수비에서 구멍이 될 수 있어요.","수비에서 타구를 끝까지 따라갈 체력이 걱정됩니다.","I'm concerned about his stamina in the field.","Me preocupa su resistencia en defensa."],
+  ["발이 느리던데요. 저희는 역습 야구를 합니다.","저희는 주루를 중시합니다. 주력이 조금 아쉽네요.","We value baserunning. His speed is a concern.","Valoramos la corrida de bases. Le falta velocidad."],
+  ["뒷공간을 내주면 따라잡을 속도가 없어 보입니다.","깊은 타구를 따라잡을 주력이 부족해 보여요.","He may lack the speed to track down deep hits.","Quizá le falte velocidad para alcanzar batazos profundos."],
+  ["세트피스","상황 타격","Situational Hitting","Bateo situacional"],
+  ["세트피스 키커로도 쓸 수 있습니다. 한 시즌 서너 골은 거기서 나와요.","주자를 진루시키는 타격에 능합니다. 득점 기회를 꾸준히 만들어 줘요.","He moves runners over and creates scoring chances.","Sabe avanzar a los corredores y crear ocasiones de anotar."],
+  ["프리킥 하나로 승점을 따 오는 선수입니다.","필요한 순간에 진루타로 득점 기회를 만드는 선수입니다.","He moves runners over when it matters.","Hace avanzar a los corredores en el momento justo."],
+  ["세트피스 때 상대가 두 명씩 붙습니다.","타석에 들어서면 상대 외야가 깊게 물러섭니다.","Outfielders play deep when he comes up to bat.","Los jardineros juegan atrás cuando él batea."],
+  ["하부 리그 주전","2군 주전","Second-Team Starter","Titular del segundo equipo"],
+  ["1부 로테이션","1군 로테이션","First-Team Rotation","Rotación del primer equipo"],
+  ["1부 주전","1군 주전","First-Team Starter","Titular del primer equipo"],
+  ["빅클럽 주전","우승권 팀 주전","Contender Starter","Titular en un aspirante al título"],
+];
+const copyMarker="/*CALLUP_C4_BASEBALL_COPY*/";
+for(const [file,column] of [[engine,1],[shell,1],[path.join(assets,"ui-DgYnPcSw.js"),2],[path.join(assets,"ui-DSX53OnJ.js"),3]]){
+  let source=fs.readFileSync(file,"utf8");
+  if(source.includes(copyMarker))continue;
+  for(const [old,ko,en,es] of baseballCopy){
+    const key=JSON.stringify(old);
+    if(column===1){
+      source=source.replaceAll(key,JSON.stringify(ko));
+    }else{
+      const escaped=key.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+      const translatedKey=old==="세트피스"?'(?:'+escaped+'|세트피스)':escaped;
+      const entry=new RegExp(translatedKey+':"(?:[^"\\\\]|\\\\.)*"','g');
+      if(!entry.test(source)&&!source.includes(JSON.stringify(ko)+":"))throw Error("Missing translation: "+old);
+      source=source.replace(entry,()=>JSON.stringify(ko)+":"+JSON.stringify(column===2?en:es));
+    }
+  }
+  if(file===engine)source=source.replace("새 감독은 압박 야구를 좋아한대요.","새 감독은 기동력과 수비를 중시한대요.");
+  fs.writeFileSync(file,source.trimEnd()+"\n"+copyMarker+"\n");
+}

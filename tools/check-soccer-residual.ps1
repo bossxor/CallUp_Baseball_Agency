@@ -11,7 +11,7 @@ $self = $PSCommandPath
 
 if (-not (Test-Path $assets)) { throw "Missing assets: $assets" }
 
-$pattern = '(?i)맨시티|레알 마드리드|바르셀로나|아스널|리버풀|주급|월드컵|FIFA|UEFA|여름 영입|겨울 영입|잉글란드|스페인|독일|이탈리아|네덜란드|벨기에|포르투갈|프랑스|프화련|(?:잉글란드|스페인|독일|이탈리아|네덜란드|벨기에|포르투갈|프랑스|오스트리아|스코틀랜드|튀르키예)\s*(?:1|2|3)부\s*리그|[123]부\s*리그|독립리그'
+$pattern = '(?i)맨시티|레알 마드리드|바르셀로나|아스널|리버풀|주급|월드컵|FIFA|UEFA|여름 영입|겨울 영입|잉글란드|스페인|독일|이탈리아|네덜란드|벨기에|포르투갈|프랑스|프화련|(?:잉글란드|스페인|독일|이탈리아|네덜란드|벨기에|포르투갈|프랑스|오스트리아|스코틀랜드|튀르키예)\s*(?:1|2|3)부\s*리그|(?:[123]|\{tier\})부\s*리그|(?:점유|역습|압박|측면|롱볼|실리)\s*야구|세트피스 수비|독립리그'
 $allowPaths = @(
     (Resolve-Path -LiteralPath $plan -ErrorAction SilentlyContinue).Path,
     (Resolve-Path -LiteralPath $self -ErrorAction SilentlyContinue).Path

@@ -1,8 +1,8 @@
 ﻿param(
     [string]$SourceDir = (Join-Path $PSScriptRoot '..\apk-src'),
     [string]$OutputApk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
-    [int]$VersionCode = 157,
-    [string]$VersionName = '0.1.0-callup.42',
+    [int]$VersionCode = 158,
+    [string]$VersionName = '0.1.0-callup.43',
     [switch]$SkipPatch
 )
 
@@ -80,8 +80,6 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-terms-baseball failed' }
     node (Join-Path $PSScriptRoot 'fix-offseason-camp.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-offseason-camp failed' }
-    powershell -NoProfile -File (Join-Path $PSScriptRoot 'check-soccer-residual.ps1')
-    if ($LASTEXITCODE -ne 0) { throw 'check-soccer-residual failed' }
     node (Join-Path $PSScriptRoot 'enable-cheats.cjs') $SourceDir
     if ($LASTEXITCODE -ne 0) { throw 'enable-cheats failed' }
     node (Join-Path $PSScriptRoot 'fix-ui-theme-dark.cjs')
@@ -119,6 +117,9 @@ if (-not $SkipPatch) {
     node (Join-Path $PSScriptRoot 'fix-phase-c-stop-rules.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-stop-rules failed' }
 }
+
+powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-soccer-residual.ps1') -Root $SourceDir
+if ($LASTEXITCODE -ne 0) { throw 'check-soccer-residual failed' }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'
 [xml]$xml = Get-Content -Raw -Encoding UTF8 -LiteralPath $manifest
