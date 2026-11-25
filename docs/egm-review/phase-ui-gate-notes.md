@@ -15,8 +15,8 @@ Date: 2026-11-25
 | Unique+ blocks week advance | PASS (code+probe) | week-gate blocks legend/offer/renewal/… — Task 5 |
 | Common/rare warn 「랜덤으로 선택」 + safe default | PASS (code+probe) | `probe-week-gate-defaults.cjs`; `def??last` no Math.random — Task 5 |
 | Legend 3s hold | PASS (code) | `d4=3000`; short tap no-op for legend — Task 6 |
-| Logo/tab CallUp assets | PASS (code) | Tasks 1–2 |
-| A/B residual: new game → home ≤2min | PENDING (device) | `smoke-ui-fast.ps1` ready; first run hit lock screen, paused for phone — retry later |
+| Logo/tab CallUp assets | PASS (device) | Contract-seal emblem + launcher + reg Xs; title shot `ui-fast-00-title.png` |
+| A/B residual: new game → home ≤2min | PASS (device) | `smoke-ui-fast.ps1` → worldgen → story → home feed (`ui-fast-wait03.png`) on callup.34 |
 
 ## Commits
 

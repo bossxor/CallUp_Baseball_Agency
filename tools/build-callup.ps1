@@ -100,6 +100,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-nego-contrast failed' }
     node (Join-Path $PSScriptRoot 'fix-ui-roster-pass.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-roster-pass failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-brand-logo.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-brand-logo failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'
