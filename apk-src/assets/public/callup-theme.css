@@ -714,3 +714,66 @@ section.personal-cheats {
   color: var(--ink) !important;
   border: 1px solid var(--line) !important;
 }
+
+/* CALLUP_ROSTER_PASS */
+/* Roster / player list — same dark amber tokens, readable rows */
+.plist,
+.pcards {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+.plist > .prow2,
+.pcards > .prow2,
+.prow2.pr2 {
+  background: var(--panel) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--line) !important;
+  min-height: 56px !important;
+}
+.prow2 .nm,
+.prow2 b,
+.plist .nm {
+  color: var(--ink) !important;
+  font-weight: 600 !important;
+}
+.prow2 .sub,
+.prow2 small,
+.plist .sub {
+  color: var(--body) !important;
+}
+.mine {
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel)) !important;
+}
+.ovr {
+  color: var(--ink) !important;
+}
+
+
+/* PAGEFLIP_HIT_BOTTOM */
+/* Hit zone: bottom of report (UX says grab below & flip up) */
+.spk-band2 {
+  top: auto !important;
+  bottom: 0 !important;
+  left: -20px !important;
+  right: -20px !important;
+  height: 55% !important;
+  z-index: 12 !important;
+  touch-action: none !important;
+}
+.spk-grab {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 9;
+  touch-action: none;
+}
+.spk.cut .spk-grab,
+.spk.pageflip .spk-grab {
+  pointer-events: none;
+}
+.spk-tip {
+  z-index: 13 !important;
+  pointer-events: none !important;
+}

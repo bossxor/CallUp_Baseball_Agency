@@ -98,6 +98,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-legend-hold failed' }
     node (Join-Path $PSScriptRoot 'fix-ui-nego-contrast.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-nego-contrast failed' }
+    node (Join-Path $PSScriptRoot 'fix-ui-roster-pass.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-ui-roster-pass failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'
