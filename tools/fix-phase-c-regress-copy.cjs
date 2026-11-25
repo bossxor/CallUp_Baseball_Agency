@@ -92,10 +92,10 @@ patch(shell,"/*CALLUP_C4_LEAGUE_LABELS*/",[
   [divisionLabel+'t.tier})', 'n(t.name)/*CALLUP_C4_LEAGUE_LABELS*/'],
   [divisionLabel+'v.tier})', 'n(v.name)'],
 ]);
-const leagueNames=["한국 1군","한국 2군","일본 1군","일본 2군","대만 1군","미국 메이저","미국 마이너"];
+const leagueNames=["KBO","KBO 퓨처스","NPB","NPB 2군","CPBL","MLB","MiLB"];
 for(const [file,oldLabel,labels] of [
-  ["ui-DgYnPcSw.js","Division",["Korea First Team","Korea Second Team","Japan First Team","Japan Second Team","Taiwan First Team","US Major League","US Minor League"]],
-  ["ui-DSX53OnJ.js","División",["Corea · primer equipo","Corea · segundo equipo","Japón · primer equipo","Japón · segundo equipo","Taiwán · primer equipo","EE. UU. · liga mayor","EE. UU. · liga menor"]],
+  ["ui-DgYnPcSw.js","Division",["KBO","KBO Futures","NPB","NPB Farm","CPBL","MLB","MiLB"]],
+  ["ui-DSX53OnJ.js","División",["KBO","KBO Futures","NPB","NPB Farm","CPBL","MLB","MiLB"]],
 ]){
   const translations=Object.fromEntries(leagueNames.map((name,index)=>[name,labels[index]]));
   patch(path.join(assets,file),"/*CALLUP_C4_LEAGUE_LABELS*/",[

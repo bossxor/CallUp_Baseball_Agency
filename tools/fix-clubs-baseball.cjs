@@ -104,6 +104,14 @@ function clubsJson() {
 }
 
 function tierLabel(market, tierNum) {
+  const formal = {
+    KR: ["KBO", "KBO 퓨처스"],
+    JP: ["NPB", "NPB 2군"],
+    TW: ["CPBL", "CPBL"],
+    US: ["MLB", "MiLB"],
+  };
+  const pair = formal[market];
+  if (pair) return tierNum <= 1 ? pair[0] : pair[1];
   const m = clubsJson().markets[market];
   const label = m.label;
   const tiers = m.tiers;
@@ -112,7 +120,7 @@ function tierLabel(market, tierNum) {
 }
 
 const FOUR_MARKET_LABEL =
-  /^(한국|일본|대만|미국) (1군|2군|메이저|마이너)$/;
+  /^(?:KBO(?: 퓨처스)?|NPB(?: 2군)?|CPBL|MLB|MiLB|(한국|일본|대만|미국) (1군|2군|메이저|마이너))$/;
 
 const EU_NAME =
   /잉글란드|스페인|독일|이탈리아|네덜란드|벨기에|포르투갈|프랑스|오스트리아|스코틀랜드|튀르키예|클리블랜드갈/;

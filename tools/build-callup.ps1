@@ -1,8 +1,8 @@
 ﻿param(
     [string]$SourceDir = (Join-Path $PSScriptRoot '..\apk-src'),
     [string]$OutputApk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
-    [int]$VersionCode = 158,
-    [string]$VersionName = '0.1.0-callup.43',
+    [int]$VersionCode = 162,
+    [string]$VersionName = '0.1.0-callup.47',
     [switch]$SkipPatch
 )
 
@@ -116,6 +116,22 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-regress-copy failed' }
     node (Join-Path $PSScriptRoot 'fix-phase-c-stop-rules.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-stop-rules failed' }
+    foreach ($patch in @(
+        'fix-baseball-leagues.cjs',
+        'fix-baseball-engine-copy.cjs',
+        'fix-baseball-shell-copy.cjs',
+        'fix-baseball-events.cjs',
+        'fix-baseball-save-copy.cjs',
+        'fix-baseball-formal-names.cjs',
+        'fix-soccer-residual-copy.cjs',
+        'fix-soccer-broad-copy.cjs',
+        'fix-baseball-pitch-svg.cjs',
+        'fix-title-diamond.cjs',
+        'fix-baseball-ball-icon.cjs'
+    )) {
+        node (Join-Path $PSScriptRoot $patch) $SourceDir
+        if ($LASTEXITCODE -ne 0) { throw "$patch failed" }
+    }
 }
 
 powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-soccer-residual.ps1') -Root $SourceDir

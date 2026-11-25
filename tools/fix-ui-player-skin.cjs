@@ -318,9 +318,19 @@ ${MARK}
   box-shadow: inset 0 0 0 1px var(--accent-line) !important;
 }
 
-/* --- .pcd trading card → CallUp compact dossier (break 280x435 silhouette) --- */
+/* Roster: 2-up cards (was 3-col → too tiny) */
+.mygrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px 12px !important;
+  padding: 4px 2px 8px !important;
+}
+.my-c .pcd-mini {
+  width: 100% !important;
+}
+
+/* --- .pcd trading card → CallUp dossier (taller + bigger face for 2-col) --- */
 .pcd-mini {
-  aspect-ratio: 280 / 210 !important;
+  aspect-ratio: 280 / 300 !important;
 }
 .pcd-3d {
   transform: none !important;
@@ -341,8 +351,8 @@ ${MARK}
   --ink2: var(--ink) !important;
   --mut: var(--body) !important;
   width: 280px !important;
-  height: 210px !important;
-  border-radius: 10px !important;
+  height: 300px !important;
+  border-radius: 12px !important;
   background: var(--panel) !important;
   color: var(--ink) !important;
   box-shadow: inset 3px 0 0 var(--accent), inset 0 0 0 1px var(--line) !important;
@@ -354,8 +364,8 @@ ${MARK}
 .pcd .pcd-crest {
   left: 12px !important;
   top: 10px !important;
-  width: 22px !important;
-  height: 22px !important;
+  width: 26px !important;
+  height: 26px !important;
   filter: none !important;
   opacity: 0.9 !important;
 }
@@ -364,37 +374,37 @@ ${MARK}
   top: 10px !important;
 }
 .pcd .pcd-fc {
-  left: 14px !important;
-  top: 40px !important;
-  width: 96px !important;
-  height: 96px !important;
-  transform: none !important;
+  left: 50% !important;
+  top: 36px !important;
+  width: 132px !important;
+  height: 132px !important;
+  transform: translateX(-50%) !important;
   filter: none !important;
   -webkit-mask: none !important;
   mask: none !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   overflow: hidden !important;
   background: var(--panel2) !important;
   box-shadow: inset 0 0 0 1px var(--line) !important;
 }
 .pcd .pcd-fc svg {
-  transform: translateY(4px) scale(1.05) !important;
+  transform: translateY(6px) scale(1.12) !important;
 }
 .pcd .pcd-nm {
-  left: 122px !important;
+  left: 12px !important;
   right: 12px !important;
-  top: 36px !important;
+  top: 176px !important;
   bottom: auto !important;
-  justify-items: start !important;
-  text-align: left !important;
-  gap: 2px !important;
+  justify-items: center !important;
+  text-align: center !important;
+  gap: 3px !important;
 }
 .pcd .pcd-nm b {
   font-family: var(--f-disp) !important;
-  font-size: 18px !important;
+  font-size: 20px !important;
   font-weight: 800 !important;
   letter-spacing: -0.03em !important;
-  line-height: 22px !important;
+  line-height: 24px !important;
   max-width: 100% !important;
   color: var(--ink) !important;
 }
@@ -403,29 +413,29 @@ ${MARK}
 }
 .pcd .pcd-nm small {
   letter-spacing: 0.12em !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   color: var(--accent-hi) !important;
 }
 .pcd .pcd-lh {
-  left: 122px !important;
+  left: 12px !important;
   right: 12px !important;
-  top: 88px !important;
+  top: 228px !important;
   bottom: auto !important;
-  justify-items: start !important;
-  text-align: left !important;
+  justify-items: center !important;
+  text-align: center !important;
   background: transparent !important;
   padding: 0 !important;
   box-shadow: none !important;
   border-radius: 0 !important;
 }
 .pcd .pcd-club {
-  font-size: 13px !important;
+  font-size: 14px !important;
   color: var(--accent-hi) !important;
   font-weight: 700 !important;
 }
 .pcd .pcd-sub {
   margin-top: 2px !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   color: var(--body) !important;
 }
 .pcd .pcd-tri {
@@ -436,8 +446,8 @@ ${MARK}
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  height: 40px !important;
-  padding: 0 14px 0 17px !important;
+  height: 44px !important;
+  padding: 0 12px 0 15px !important;
   border-top: 1px solid var(--line) !important;
   background: var(--panel2) !important;
   color: var(--body) !important;
@@ -446,7 +456,7 @@ ${MARK}
 .pcd .pcd-fth b {
   color: var(--accent-hi) !important;
   font-family: var(--f-num) !important;
-  font-size: 14px !important;
+  font-size: 15px !important;
 }
 .pcd .pcd-q {
   border-radius: 4px !important;
@@ -460,7 +470,7 @@ ${MARK}
 }
 .pcd-page .pcd,
 .pcd-out .pcd {
-  height: 210px !important;
+  height: 300px !important;
 }
 .pcd-tw {
   perspective: none !important;

@@ -63,24 +63,31 @@ if (eng.includes(MARK_FN)) {
   process.exitCode = 1;
 }
 
-rep(
-  "yield,iN(x,e,t),YN(x,t)",
-  `yield,iN(x,e,t),callupOffSeasonCamp(x,t),${MARK_HOOK}YN(x,t)`,
-  "offCamp-hook"
-);
-
 eng = fs.readFileSync(engPath, "utf8");
-if (!eng.includes(MARK_HOOK) && eng.includes("callupOffSeasonCamp(x,t),")) {
+if (eng.includes(MARK_HOOK) || eng.includes("callupOffSeasonCamp(x,t),")) {
   console.log("ok offCamp-hook");
-} else if (!eng.includes(MARK_HOOK)) {
-  rep("iN(x,e,t),YN(x,t)", `iN(x,e,t),callupOffSeasonCamp(x,t),${MARK_HOOK}YN(x,t)`, "offCamp-hook-alt");
+} else {
+  rep(
+    "yield,iN(x,e,t),YN(x,t)",
+    `yield,iN(x,e,t),callupOffSeasonCamp(x,t),${MARK_HOOK}YN(x,t)`,
+    "offCamp-hook"
+  );
+  eng = fs.readFileSync(engPath, "utf8");
+  if (!eng.includes(MARK_HOOK)) {
+    rep("iN(x,e,t),YN(x,t)", `iN(x,e,t),callupOffSeasonCamp(x,t),${MARK_HOOK}YN(x,t)`, "offCamp-hook-alt");
+  }
 }
 
-rep(
-  'n.ev==="military"?iM(x,n,t):n.ev==="retire"?tj(x,r,n,t):t9(x,r,n,t)',
-  `n.ev==="military"?iM(x,n,t):n.ev==="offCamp"?callupOffSeasonCampPick(x,n,t):n.ev==="retire"?tj(x,r,n,t):t9(x,r,n,t)${MARK_RES}`,
-  "offCamp-res"
-);
+eng = fs.readFileSync(engPath, "utf8");
+if (eng.includes(MARK_RES) || eng.includes('n.ev==="offCamp"?callupOffSeasonCampPick')) {
+  console.log("ok offCamp-res");
+} else {
+  rep(
+    'n.ev==="military"?iM(x,n,t):n.ev==="retire"?tj(x,r,n,t):t9(x,r,n,t)',
+    `n.ev==="military"?iM(x,n,t):n.ev==="offCamp"?callupOffSeasonCampPick(x,n,t):n.ev==="retire"?tj(x,r,n,t):t9(x,r,n,t)${MARK_RES}`,
+    "offCamp-res"
+  );
+}
 
 const ASSERT_SNIP = "if(!a.callupClauses1)a.callupClauses1=true;/*CALLUP_CLAUSES_ASSERT*/}";
 const ASSERT_TERM =

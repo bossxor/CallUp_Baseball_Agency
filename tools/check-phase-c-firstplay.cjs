@@ -10,10 +10,17 @@ const shellFile = path.join(assets, "shell-DaKdX7f1.js");
 async function run() {
   let source = fs.readFileSync(engineFile, "utf8").replace(/(["'])\.\/([^"']+)\1/g,
     (_, quote, file) => quote + pathToFileURL(path.join(assets, file)).href + quote);
-  source += "\nexport {V5, Qe, Cn, callupSeasonRound, callupKoreanDraft, callupSupportReport, callupScoutMatch, callupTaiwanReferrals, EU, nU, V9, Ge, Ap, ET, GT, ke, vI, Xd, Jd, Ct};";
+  source += "\nexport {V5, Qe, Cn, callupSeasonRound, callupKoreanDraft, callupSupportReport, callupScoutMatch, callupTaiwanReferrals, EU, nU, V9, Ge, Ap, ET, GT, ke, vI, Xd, Jd, Ct, Sr, sx, pd, xa, T8, callupExtraInning};";
   const engine = await import("data:text/javascript;base64," + Buffer.from(source).toString("base64"));
 
   const g = engine.V5({agent:"QA",nat:"대한민국",agencyName:"CallUp QA",lang:"ko"},20261125,71).g;
+  assert.equal(engine.j.KOR1.name,"KBO");
+  assert.equal(engine.j.ESP1.name,"NPB");
+  assert.equal(engine.j.ITA1.name,"MLB");
+  assert.equal(engine.j.GER1.name,"CPBL");
+  assert.equal(engine.j.ENG2.name,"KBO 퓨처스");
+  assert.deepEqual(engine.aR,[],"no football club tournaments");
+  assert.ok(engine.L.every(league=>league.season==="FEB_NOV"&&!league.down&&!league.releg&&!league.promo&&!league.split),"baseball league calendar has no club promotion or split");
   const club = g.clubs.find(team => team.league==="KOR1");
   const player = g.players[club.squad[0]];
   assert.ok(player,"Korean player seeded");
@@ -203,5 +210,39 @@ async function run() {
   assert.equal(blocks({ev:"support",tier:"rare"}),false);
   assert.equal(blocks({ev:"supportReport",tier:"mid"}),false);
   console.log("PASS C5 arrival stops, unique manual gate, rare informational return");
+
+  let extraHalfInnings=0;
+  const scoreless={poisson:()=>{extraHalfInnings++;return 0;},chance:()=>true};
+  assert.deepEqual(engine.callupExtraInning(scoreless,2,2,0,false,11),[2,2]);
+  assert.equal(extraHalfInnings,4,"KBO regular season ends after eleven innings");
+  assert.deepEqual(engine.callupExtraInning(scoreless,2,2,0,true),[3,2]);
+  const legacyLeader={w:12,l:12,d:4,gf:40,ga:30,pts:70};
+  const pctLeader={w:10,l:7,d:8,gf:30,ga:40,pts:12};
+  assert.equal(engine.Sr([legacyLeader,pctLeader])[0],pctLeader,"rank by win percentage without draws");
+
+  const fixture=engine.V5({agent:"QA",nat:"대한민국",agencyName:"CallUp QA",lang:"ko"},20261125,71).g;
+  const [home,away,...rest]=fixture.clubs.filter(team=>team.league==="KOR1");
+  const rng=new engine.sx(123);
+  const lineup=engine.pd(fixture,home,rng,{fresh:true});
+  assert.equal(lineup.length,9);
+  assert.equal(lineup.filter(player=>player.pos==="P").length,1);
+  const row=team=>({club:team.id,p:0,w:0,l:0,d:0,gf:0,ga:0,pts:0});
+  const homeRow=row(home),awayRow=row(away);
+  const [runs,allowed]=engine.xa(fixture,rng,home,away,new Map([[home.id,homeRow],[away.id,awayRow]]));
+  assert.equal(homeRow.p,1);
+  assert.equal(homeRow.w+homeRow.l+homeRow.d,homeRow.p);
+  assert.equal(homeRow.gf,runs);
+  assert.equal(homeRow.ga,allowed);
+  const roster=home.squad.map(id=>fixture.players[id]);
+  assert.equal(roster.reduce((sum,player)=>sum+player.st.rbi,0),runs);
+  assert.ok(roster.reduce((sum,player)=>sum+player.st.h,0)>=runs);
+  const [topHits,topRbi]=roster.filter(player=>player.pos!=="P");
+  topHits.st.h=91;topHits.st.rbi=0;
+  topRbi.st.h=10;topRbi.st.rbi=80;
+  fixture.leagues.KOR1.table=[homeRow,awayRow,...rest.map(row)];
+  engine.T8(fixture,engine.j.KOR1,fixture.week);
+  assert.ok(topHits.honors.some(honor=>honor.endsWith("안타왕")));
+  assert.ok(topRbi.honors.some(honor=>honor.endsWith("타점왕")));
+  console.log("PASS baseball lineup, scored runs, standings, extra innings and batting awards");
 }
 run().catch(error=>{ console.error(error.message); console.error(error.stack?.split("\n").filter(line=>!line.includes("data:text")).slice(0,4).join("\n")); process.exitCode=1; });
