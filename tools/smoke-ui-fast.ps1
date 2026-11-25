@@ -1,10 +1,11 @@
-﻿# Phase UI fast smoke: install → clear → new game → wait home ≤60s → shot → force-stop.
-# Always kills launched work and force-stops app on exit so phone is freed.
+﻿# Phase UI fast smoke: install → clear → new game → wait home ≤budget → shot → force-stop.
+# Always force-stops app on exit so phone is freed.
+# Device probe (1440x3120): 새 게임 y≈2600, 시작하기 y≈2300.
 param(
     [string]$Serial = '',
     [string]$Apk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
     [string]$OutDir = (Join-Path $PSScriptRoot '..\docs\egm-review'),
-    [int]$MaxWaitSec = 60
+    [int]$MaxWaitSec = 90
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,6 +35,11 @@ function Tap([int]$x, [int]$y, [int]$waitMs = 1200) {
     Start-Sleep -Milliseconds $waitMs
 }
 
+function Swipe([int]$x1, [int]$y1, [int]$x2, [int]$y2, [int]$dur = 350) {
+    adb -s $script:dev shell input swipe $x1 $y1 $x2 $y2 $dur | Out-Null
+    Start-Sleep -Milliseconds 700
+}
+
 function Cleanup {
     if ($script:dev) {
         try { adb -s $script:dev shell am force-stop $pkg | Out-Null } catch {}
@@ -50,7 +56,6 @@ trap {
 try {
     $script:dev = Get-Serial
     Write-Host "device $($script:dev)"
-    # Wake + dismiss keyguard so taps hit the app, not lock screen
     adb -s $script:dev shell input keyevent KEYCODE_WAKEUP | Out-Null
     Start-Sleep -Milliseconds 400
     adb -s $script:dev shell input keyevent KEYCODE_BACK | Out-Null
@@ -63,34 +68,37 @@ try {
     adb -s $script:dev shell pm clear $pkg
     adb -s $script:dev logcat -c
     adb -s $script:dev shell am start -n $activity
-    Start-Sleep -Seconds 3
+    Start-Sleep -Seconds 5
     Shot 'ui-fast-00-title.png'
 
-    # New game (single-save primary CTA ~center-bottom)
-    Tap 720 2220 1800
+    # 새 게임 (probed y≈2600 on 1440x3120)
+    Tap 720 2600 2200
     Shot 'ui-fast-01-reg.png'
-    Tap 720 2350 1500
+    # 시작하기 (probed y≈2300)
+    Tap 720 2300 1500
+    Shot 'ui-fast-02-started.png'
 
     $deadline = [DateTime]::UtcNow.AddSeconds($MaxWaitSec)
     $i = 0
     $homeish = $false
     while ([DateTime]::UtcNow -lt $deadline) {
         $i++
-        Start-Sleep -Seconds 3
-        # mash through intro / reports
-        Tap 720 2700 400
-        adb -s $script:dev shell input swipe 1100 1500 400 1500 350 | Out-Null
-        Tap 720 2800 400
+        Start-Sleep -Seconds 5
+        # story next / skip / pageflip / mid CTA
+        Tap 1100 2850 350
+        Tap 720 2850 350
+        Swipe 1180 1600 360 1600 400
+        Tap 400 2850 350
         Shot ("ui-fast-wait{0:D2}.png" -f $i)
         Write-Host "wait $i / ${MaxWaitSec}s"
-        if ($i -ge 4) { $homeish = $true; break }
+        if ([DateTime]::UtcNow -ge $deadline.AddSeconds(-8)) { $homeish = $true; break }
     }
 
     Shot 'ui-fast-home.png'
     if (-not $homeish) {
         Write-Host "WARN: home wait timed out at ${MaxWaitSec}s — review shots"
     } else {
-        Write-Host "OK: reached post-intro frame within budget"
+        Write-Host "OK: finished wait budget — review ui-fast-home.png"
     }
 
     $log = adb -s $script:dev logcat -d -t 80 2>$null |
