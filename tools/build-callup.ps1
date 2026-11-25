@@ -108,6 +108,8 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-player-skin failed' }
     node (Join-Path $PSScriptRoot 'fix-ui-face-callup.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-ui-face-callup failed' }
+    node (Join-Path $PSScriptRoot 'fix-phase-c-salary-season.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-salary-season failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'

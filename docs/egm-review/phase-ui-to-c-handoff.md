@@ -19,8 +19,9 @@
 
 | Residual | Status | Pointer |
 |----------|--------|---------|
-| Mid CTA house/play | OPEN | Device: `ui-fast-home.png` (house), `ui-fast-wait03.png` (play △). Code: `fix-ui-tab-baseball.cjs` |
-| Logo default selection | OPEN | Reg should auto-pick contract-seal (Xs case 0). Brand patch: `fix-ui-brand-logo.cjs` / `e7a92da` |
+| Mid CTA house/play | CLOSED | `689261e` — mid `<i>` empty + baseball CSS hides SVG |
+| Logo default selection | CLOSED | `c6c1544` — `useState(0)` contract mark |
+| Player chrome / face | CLOSED | `e9e5947` — dossier pcd + baseball cap/jersey |
 | Nego device shot | OPEN | Contrast code in `fix-ui-nego-contrast.cjs`; need in-game nego screenshot |
 
 ## Phase C entry
