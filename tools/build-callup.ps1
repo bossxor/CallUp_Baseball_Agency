@@ -1,8 +1,8 @@
 ﻿param(
     [string]$SourceDir = (Join-Path $PSScriptRoot '..\apk-src'),
     [string]$OutputApk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
-    [int]$VersionCode = 156,
-    [string]$VersionName = '0.1.0-callup.41',
+    [int]$VersionCode = 157,
+    [string]$VersionName = '0.1.0-callup.42',
     [switch]$SkipPatch
 )
 
@@ -114,6 +114,10 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-draft failed' }
     node (Join-Path $PSScriptRoot 'fix-phase-c-support.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-support failed' }
+    node (Join-Path $PSScriptRoot 'fix-phase-c-regress-copy.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-regress-copy failed' }
+    node (Join-Path $PSScriptRoot 'fix-phase-c-stop-rules.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-stop-rules failed' }
 }
 
 $manifest = Join-Path $SourceDir 'AndroidManifest.xml'
