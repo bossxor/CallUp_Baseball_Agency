@@ -308,6 +308,49 @@
 
     invoke-virtual {p1, v1}, Landroid/webkit/WebSettings;->setBlockNetworkLoads(Z)V
 
+    # CALLUP_NO_ZOOM
+    iget-object p1, p0, Lcom/signhere/offline/MainActivity;->game:Landroid/webkit/WebView;
+
+    invoke-virtual {p1}, Landroid/webkit/WebView;->getSettings()Landroid/webkit/WebSettings;
+
+    move-result-object p1
+
+    invoke-virtual {p1, v2}, Landroid/webkit/WebSettings;->setSupportZoom(Z)V
+
+    iget-object p1, p0, Lcom/signhere/offline/MainActivity;->game:Landroid/webkit/WebView;
+
+    invoke-virtual {p1}, Landroid/webkit/WebView;->getSettings()Landroid/webkit/WebSettings;
+
+    move-result-object p1
+
+    invoke-virtual {p1, v2}, Landroid/webkit/WebSettings;->setBuiltInZoomControls(Z)V
+
+    iget-object p1, p0, Lcom/signhere/offline/MainActivity;->game:Landroid/webkit/WebView;
+
+    invoke-virtual {p1}, Landroid/webkit/WebView;->getSettings()Landroid/webkit/WebSettings;
+
+    move-result-object p1
+
+    invoke-virtual {p1, v2}, Landroid/webkit/WebSettings;->setDisplayZoomControls(Z)V
+
+    iget-object p1, p0, Lcom/signhere/offline/MainActivity;->game:Landroid/webkit/WebView;
+
+    invoke-virtual {p1}, Landroid/webkit/WebView;->getSettings()Landroid/webkit/WebSettings;
+
+    move-result-object p1
+
+    const/16 v3, 0x64
+
+    invoke-virtual {p1, v3}, Landroid/webkit/WebSettings;->setTextZoom(I)V
+
+    iget-object p1, p0, Lcom/signhere/offline/MainActivity;->game:Landroid/webkit/WebView;
+
+    invoke-virtual {p1, v2}, Landroid/webkit/WebView;->setLongClickable(Z)V
+
+    iget-object p1, p0, Lcom/signhere/offline/MainActivity;->game:Landroid/webkit/WebView;
+
+    invoke-virtual {p1, v2}, Landroid/webkit/WebView;->setHapticFeedbackEnabled(Z)V
+
     .line 36
     iget-object p1, p0, Lcom/signhere/offline/MainActivity;->game:Landroid/webkit/WebView;
 

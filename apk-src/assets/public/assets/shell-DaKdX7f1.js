@@ -254,7 +254,7 @@ function PersonalCheats() {
         onClick: () => setOpen(!open), "aria-expanded": open,
         children: e.jsx("b", {children: open ? "치트 닫기" : "치트"})}),
       open && e.jsxs("div", {className: "personal-cheats-fields cheat-panel", children: [
-        group("치트 종류 (개인용)", [["players", "선수·자금"], ["negotiation", "협상"], ["scout", "스카우트"], ["qa", "Phase C 테스트"]], tab, setTab),
+        /*CALLUP_CHEAT_TAB_SELECT*/ e.jsxs("label", {className: "cheat-tab-select", children: ["치트 종류", e.jsx("select", {value: tab, onChange: event => setTab(event.target.value),children: [["players", "선수·자금"], ["negotiation", "협상"], ["scout", "스카우트"], ["qa", "Phase C 테스트"]].map(([key, title]) => e.jsx("option", {value: key, children: title}, key))})]}),
         /*CALLUP_C5_CHEAT_UI*/ ...(tab === "qa" ? [
   button("시즌 연봉 테스트", {disabled:!player||busy,onClick:()=>void apply("seasonSalTest")}),
   button("드래프트 테스트", {disabled:!player||busy,onClick:()=>void apply("draftTest")}),

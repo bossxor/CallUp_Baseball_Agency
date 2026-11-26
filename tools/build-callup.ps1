@@ -1,8 +1,8 @@
 ﻿param(
     [string]$SourceDir = (Join-Path $PSScriptRoot '..\apk-src'),
     [string]$OutputApk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
-    [int]$VersionCode = 162,
-    [string]$VersionName = '0.1.0-callup.47',
+    [int]$VersionCode = 164,
+    [string]$VersionName = '0.1.0-callup.49',
     [switch]$SkipPatch
 )
 
@@ -116,6 +116,10 @@ if (-not $SkipPatch) {
     if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-regress-copy failed' }
     node (Join-Path $PSScriptRoot 'fix-phase-c-stop-rules.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'fix-phase-c-stop-rules failed' }
+    node (Join-Path $PSScriptRoot 'fix-cheat-tabs-touch.cjs') $SourceDir
+    if ($LASTEXITCODE -ne 0) { throw 'fix-cheat-tabs-touch failed' }
+    node (Join-Path $PSScriptRoot 'fix-webview-no-zoom.cjs') $SourceDir
+    if ($LASTEXITCODE -ne 0) { throw 'fix-webview-no-zoom failed' }
     foreach ($patch in @(
         'fix-baseball-leagues.cjs',
         'fix-baseball-engine-copy.cjs',
