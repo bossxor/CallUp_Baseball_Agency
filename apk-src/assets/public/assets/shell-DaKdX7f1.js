@@ -175,15 +175,15 @@ function PersonalCheats() {
   };
 
   const negotiationPanel = () => {
-    const query = clubQuery.trim().toLocaleLowerCase();
+    /*CALLUP_CHEAT_CLUB_LIST*/ const query = clubQuery.trim().toLocaleLowerCase();
     const clubs = [];
-    if (query && player) {
+    if (player) {
       for (const club of game.clubs) {
+        if (club.id === player.club) continue;
         const name = Te(club);
-        if (club.id !== player.club && name.toLocaleLowerCase().includes(query)) {
-          clubs.push([String(club.id), name]);
-          if (clubs.length === 30) break;
-        }
+        if (query && !name.toLocaleLowerCase().includes(query)) continue;
+        clubs.push([String(club.id), name]);
+        if (clubs.length === 40) break;
       }
     }
     return [
@@ -191,11 +191,11 @@ function PersonalCheats() {
       toggle("협상 기술 쿨타임 제거", agency.offlineNoSkillCooldown === true, "skillCooldownOn", "skillCooldownOff"),
       player ? playerPicker() : e.jsx("p", {children: "계약 선수가 생기면 이적 제안을 만들 수 있어요."}),
       player && form("transferOffer", "이적 제안 1건", [
-        e.jsxs("label", {children: ["제안할 구단 검색", e.jsx("input", {
+        e.jsxs("label", {children: ["구단 필터 (선택)", e.jsx("input", {
           type: "search", value: clubQuery, onChange: event => setClubQuery(event.target.value),
         })]}),
         e.jsx(e.Fragment, {children: select("제안할 구단", "club",
-          [["", !query ? "구단명을 검색하세요" : clubs.length ? "구단을 선택하세요" : "검색 결과 없음"], ...clubs],
+          [["", clubs.length ? "구단을 선택하세요" : "선택 가능한 구단 없음"], ...clubs],
           {required: true, defaultValue: ""})}, clubQuery),
       ], "제안 생성", !clubs.length),
     ];
@@ -254,7 +254,7 @@ function PersonalCheats() {
         onClick: () => setOpen(!open), "aria-expanded": open,
         children: e.jsx("b", {children: open ? "치트 닫기" : "치트"})}),
       open && e.jsxs("div", {className: "personal-cheats-fields cheat-panel", children: [
-        /*CALLUP_CHEAT_TAB_SELECT*/ e.jsxs("label", {className: "cheat-tab-select", children: ["치트 종류", e.jsx("select", {value: tab, onChange: event => setTab(event.target.value),children: [["players", "선수·자금"], ["negotiation", "협상"], ["scout", "스카우트"], ["qa", "Phase C 테스트"]].map(([key, title]) => e.jsx("option", {value: key, children: title}, key))})]}),
+        /*CALLUP_CHEAT_TAB_LIST*/ e.jsxs("div", {className: "cheat-tab-list", role: "group", "aria-label": "치트 종류", children: [["players", "선수·자금"], ["negotiation", "협상"], ["scout", "스카우트"], ["qa", "Phase C 테스트"]].map(([key, title]) => e.jsx("button", {type: "button", className: "btn cheat-tab-btn" + (key === tab ? " on" : " ghost"), "aria-pressed": key === tab, onClick: () => setTab(key), children: title}, key))}),
         /*CALLUP_C5_CHEAT_UI*/ ...(tab === "qa" ? [
   button("시즌 연봉 테스트", {disabled:!player||busy,onClick:()=>void apply("seasonSalTest")}),
   button("드래프트 테스트", {disabled:!player||busy,onClick:()=>void apply("draftTest")}),

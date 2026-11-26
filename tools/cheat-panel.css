@@ -175,3 +175,35 @@ section.personal-cheats :is(input, select, textarea) {
   -webkit-appearance: none;
   margin: 0;
 }
+
+
+/*CALLUP_CHEAT_TAB_LIST_CSS*/
+section.personal-cheats .sw-row.set-link,
+section.personal-cheats .sw-row.set-link b {
+  background: #1a2030 !important;
+  color: #f2ede4 !important;
+  -webkit-text-fill-color: #f2ede4 !important;
+  border: 1px solid #3a4250 !important;
+  border-radius: 10px !important;
+  min-height: 48px;
+}
+.cheat-panel .cheat-tab-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cheat-panel .cheat-tab-btn {
+  min-height: 48px;
+  width: 100%;
+  padding: 12px 8px;
+  font-size: 15px;
+  position: relative;
+  z-index: 2;
+  touch-action: manipulation;
+}
+.cheat-panel .cheat-tab-btn.on {
+  border: 1px solid var(--accent, #c4924a) !important;
+  color: var(--accent, #c4924a) !important;
+  font-weight: 700;
+}
