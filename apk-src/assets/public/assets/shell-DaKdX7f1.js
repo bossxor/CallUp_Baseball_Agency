@@ -175,15 +175,20 @@ function PersonalCheats() {
   };
 
   const negotiationPanel = () => {
-    /*CALLUP_CHEAT_CLUB_LIST*/ const query = clubQuery.trim().toLocaleLowerCase();
+    /*CALLUP_CHEAT_CLUB_LIST*/ /*CALLUP_FORMAL_CHEAT*/ const query = clubQuery.trim().toLocaleLowerCase();
+    const formal = new Set(["인천","수원","대전","광주","대구","부산","창원","서울","고양","청주","도쿄","요코하마","오사카","고베","나고야","히로시마","후쿠오카","삿포로","센다이","치바","사이타마","오키나와","타이베이","타이중","가오슝","타오위안","신베이","화련","뉴욕","보스턴","필라델피아","워싱턴","애틀랜타","마이애미","탬파","토론토","볼티모어","시카고북","시카고남","클리블랜드","디트로이트","미네소타","캔자스시티","휴스턴","세인트루이스","밀워키","신시내티","피츠버그","LA","샌프란","샌디에이고","애리조나","콜로라도","시애틀","텍사스","오클랜드","LA남","탬파만"]);
     const clubs = [];
+    const seen = new Set();
     if (player) {
       for (const club of game.clubs) {
         if (club.id === player.club) continue;
-        const name = Te(club);
+        let name = Te(club);
+        name = String(name).replace(/\s+\d+$/u, "").replace(/(\D)\d+$/u, "$1").trim();
+        if (!formal.has(name) || seen.has(name)) continue;
         if (query && !name.toLocaleLowerCase().includes(query)) continue;
+        seen.add(name);
         clubs.push([String(club.id), name]);
-        if (clubs.length === 40) break;
+        if (clubs.length === 60) break;
       }
     }
     return [

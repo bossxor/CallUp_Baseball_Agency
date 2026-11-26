@@ -1,8 +1,8 @@
 ﻿param(
     [string]$SourceDir = (Join-Path $PSScriptRoot '..\apk-src'),
     [string]$OutputApk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
-    [int]$VersionCode = 167,
-    [string]$VersionName = '0.1.0-callup.52',
+    [int]$VersionCode = 168,
+    [string]$VersionName = '0.1.0-callup.53',
     [switch]$SkipPatch
 )
 
@@ -127,6 +127,8 @@ if (-not $SkipPatch) {
         'fix-baseball-events.cjs',
         'fix-baseball-save-copy.cjs',
         'fix-baseball-formal-names.cjs',
+        'fix-clubs-baseball.cjs',
+        'fix-club-formal-names.cjs',
         'fix-soccer-residual-copy.cjs',
         'fix-soccer-broad-copy.cjs',
         'fix-baseball-pitch-svg.cjs',

@@ -383,9 +383,9 @@ function patchLeagueRegistrations(text, byMarket) {
     const cont = contForCountry(country);
     const label = tierLabel(mk, +tier);
     const pool = byMarket[mk];
-    const list = clubs.split(",").filter(Boolean);
-    const mapped = list.map((_, i) => pool[i % pool.length]);
-    clubN += list.length;
+    // Baseball: one formal city each — never cycle (avoids vw() → "수원 1")
+    const mapped = [...new Set(pool)];
+    clubN += mapped.length;
     leagueN++;
     return `N("${id}","${label}","${country}","${cont}",${tier},${a6},${a7},${a8},"${a9}","${mapped.join(",")}"${tail || ""})`;
   });
