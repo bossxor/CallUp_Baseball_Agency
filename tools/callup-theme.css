@@ -1,4 +1,4 @@
-/* CallUp — dark charcoal + warm amber leather. Agency desk, high contrast. */
+﻿/* CallUp — dark charcoal + warm amber leather. Agency desk, high contrast. */
 :root {
   --sat: env(safe-area-inset-top, 0px);
   --bg: #12151A;
@@ -1306,4 +1306,21 @@ html, body, #root {
 input, textarea, select, [contenteditable="true"] {
   -webkit-user-select: text !important;
   user-select: text !important;
+}
+
+/*CALLUP_CHEAT_DARK_FIELDS_THEME*/
+.cheat-panel,
+.personal-cheats-fields,
+section.personal-cheats { color-scheme: dark; }
+.cheat-panel :is(input, select, textarea),
+.personal-cheats-fields :is(input, select, textarea),
+section.personal-cheats :is(input, select, textarea) {
+  background: #1a2030 !important;
+  background-color: #1a2030 !important;
+  color: #f2ede4 !important;
+  -webkit-text-fill-color: #f2ede4 !important;
+  border: 1px solid #3a4250 !important;
+  caret-color: #c4924a !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
 }

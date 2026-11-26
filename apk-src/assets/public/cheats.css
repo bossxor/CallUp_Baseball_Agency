@@ -111,3 +111,67 @@
   min-height: 44px;
   padding: 10px 8px;
 }
+
+/*CALLUP_CHEAT_DARK_FIELDS*/
+.cheat-panel,
+.personal-cheats-fields,
+section.personal-cheats {
+  color-scheme: dark;
+}
+.cheat-panel label,
+.personal-cheats-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--body, #c8c2b6);
+}
+.cheat-panel :is(input, select, textarea),
+.personal-cheats-fields :is(input, select, textarea),
+section.personal-cheats :is(input, select, textarea) {
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.3;
+  border-radius: 10px;
+  border: 1px solid #3a4250 !important;
+  background: #1a2030 !important;
+  background-color: #1a2030 !important;
+  color: #f2ede4 !important;
+  -webkit-text-fill-color: #f2ede4 !important;
+  caret-color: #c4924a !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45) !important;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  color-scheme: dark;
+}
+.cheat-panel :is(input, select, textarea):focus,
+.personal-cheats-fields :is(input, select, textarea):focus {
+  border-color: var(--accent, #c4924a) !important;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    0 0 0 2px color-mix(in srgb, var(--accent, #c4924a) 35%, transparent) !important;
+}
+.cheat-panel select,
+.personal-cheats-fields select {
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent, #c4924a) 50%),
+    linear-gradient(135deg, var(--accent, #c4924a) 50%, transparent 50%) !important;
+  background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px) !important;
+  background-size: 6px 6px, 6px 6px !important;
+  background-repeat: no-repeat !important;
+  padding-right: 36px;
+}
+.cheat-panel input[type="number"],
+.personal-cheats-fields input[type="number"] {
+  -moz-appearance: textfield;
+}
+.cheat-panel input[type="number"]::-webkit-outer-spin-button,
+.cheat-panel input[type="number"]::-webkit-inner-spin-button,
+.personal-cheats-fields input[type="number"]::-webkit-outer-spin-button,
+.personal-cheats-fields input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
