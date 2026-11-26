@@ -20,7 +20,7 @@
 - `powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-soccer-residual.ps1`
 - `powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-callup.ps1 -SkipPatch`
 
-서명된 `CallUp-Prototype.apk`는 `com.callup.agency`, 버전 158 / `0.1.0-callup.43`이다. 폰에 덮어 설치한 뒤 타이틀에서 기존 1년차 7월 저장을 확인했다.
+서명된 `CallUp-Prototype.apk`는 `com.callup.agency`, 버전 162 / `0.1.0-callup.47`이다. 폰에 덮어 설치한 뒤 타이틀에서 기존 1년차 7월 저장을 확인했다.
 
 ## 실기기 스모크
 
@@ -36,4 +36,6 @@
 - 리그 표시: `KBO` / `KBO 퓨처스` / `NPB` / `NPB 2군` / `CPBL` / `MLB` / `MiLB`
 - `check-soccer-residual.ps1` GATE PASS (하프라인·풀백·태클·Full-back 포함)
 - `check-phase-c-firstplay.cjs` 6항목 PASS (라인업·승률·연장 포함)
-- APK: `0.1.0-callup.45` / versionCode 160 — 실기기 설치 확인 (`com.callup.agency`)
+- APK: `0.1.0-callup.47` / versionCode 162 — 실기기 설치 확인 (`com.callup.agency`)
+- 로스터 2열 그리드 · 리그 칩 KBO/NPB · 순위 승률 · 스카우트 포지션(투수~우익수) 실기기 캡처 (`ui-callup47-*.png`)
+- 남은 실기기: 시즌2 연속 진행, 2군→1군(KBO) 전체 흐름, 이적 제안 카드 리그명(협상 0건 상태)
