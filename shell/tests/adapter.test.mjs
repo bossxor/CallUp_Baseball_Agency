@@ -102,6 +102,18 @@ test('continues a committed gzip world and advances week zero through the engine
   assert.equal((await webReader.advanceWeek()).saved, true);
   assert.ok(files.get('saves/slot0.bin') instanceof Blob);
   assert.equal((await createEngineAdapter().loadSave()).week, 3);
+
+  await webReader.saveBackup(4);
+  assert.equal((await webReader.listBackups())[0].exists, true);
+  assert.equal((await webReader.advanceWeek()).week, 4);
+  fail = true;
+  await assert.rejects(() => webReader.restoreBackup(4), /현재 진행/);
+  assert.equal(webReader.getSnapshot().week, 4);
+  assert.equal((await createEngineAdapter().loadSave()).week, 4);
+  fail = false;
+  assert.equal((await webReader.restoreBackup(4)).week, 3);
+  assert.equal((await createEngineAdapter().loadSave()).week, 3);
+  assert.equal((await webReader.listBackups())[0].exists, true);
 });
 
 test('snapshot uses the engine calendar and age without collapsing week zero', async () => {

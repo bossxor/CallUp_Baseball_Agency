@@ -73,11 +73,11 @@ async function remove(fs, path) {
   try { await fs.deleteFile({ path, directory: DIRECTORY }); } catch { /* Already absent. */ }
 }
 
-export async function writeSlotBlob(blob, slot = 0) {
+export async function writeSlotBlob(blob, slot = 0, metadata) {
   if (!blob?.size) return false;
   if (hasOfflineStore()) {
     try {
-      await offlineSlot('readwrite', (store) => store.put({ blob }, `slot${slot}`));
+      await offlineSlot('readwrite', (store) => store.put({ blob, ...metadata && { metadata } },  `slot${slot}`));
       markHasSave();
       return true;
     } catch (error) {
@@ -154,12 +154,14 @@ function pathsFor(slot) {
   return [...binary, text, text + '.tmp'];
 }
 
-export async function* slotCandidates() {
+export const CONTINUE_SLOTS = [0, 1, 2, 3];
+
+export async function* slotCandidates(slots = CONTINUE_SLOTS) {
   if (hasOfflineStore()) {
-    for (const slot of [0, 1, 2, 3]) {
+    for (const slot of slots) {
       try {
         const record = await offlineSlot('readonly', (store) => store.get(`slot${slot}`));
-        if (record?.blob instanceof Blob && record.blob.size > 0) yield { slot, blob: record.blob };
+        if (record?.blob instanceof Blob && record.blob.size > 0) yield { slot, blob: record.blob, metadata: record.metadata };
       } catch (error) {
         console.warn('WebView save read failed', error);
         break;
@@ -168,7 +170,7 @@ export async function* slotCandidates() {
   }
   const { plugin: fs } = await filesystem();
   if (!fs) return;
-  for (const slot of [0, 1, 2, 3]) {
+  for (const slot of slots) {
     for (const path of pathsFor(slot)) {
       try {
         if (path.includes('.json')) {

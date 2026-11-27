@@ -4,6 +4,7 @@
  */
 
 import {
+  CONTINUE_SLOTS,
   clearHasSaveFlag,
   deleteSlot,
   flagHasSave,
@@ -19,6 +20,7 @@ const BASEBALL_LEAGUES = ['KOR1', 'KOR2', 'JPN1', 'JPN2', 'GER1', 'USA1', 'USA2'
 const FACILITIES = ['scout', 'admin', 'medical', 'training'];
 const ENGINE_SAVE_KEY = 'callup-engine-raw-v1';
 const ACTIVE_SLOT = 0;
+const BACKUP_SLOTS = [4, 5, 6];
 const SCOUT_CONTRACT = { years: 2, fee: .05 };
 const TIER_RANK = { common: 0, rare: 1, unique: 2, epic: 3, legend: 4 };
 
@@ -294,16 +296,17 @@ export function createEngineAdapter() {
     return mod;
   };
 
+  const packGame = async () => {
+    const packed = await serializeWithEngine(mod, game);
+    if (packed.blob) return packed.blob;
+    const stream = new Blob([packed.text]).stream().pipeThrough(new CompressionStream('gzip'));
+    return new Response(stream).blob();
+  };
+
   const persist = async () => {
     saved = false;
     try {
-      const packed = await serializeWithEngine(mod, game);
-      let blob = packed.blob;
-      if (!blob) {
-        const stream = new Blob([packed.text]).stream().pipeThrough(new CompressionStream('gzip'));
-        blob = await new Response(stream).blob();
-      }
-      saved = await writeSlotBlob(blob, ACTIVE_SLOT);
+      saved = await writeSlotBlob(await packGame(), ACTIVE_SLOT);
       if (saved) clearRawSave();
     } catch (error) {
       console.warn('Save write failed', error);
@@ -381,8 +384,42 @@ export function createEngineAdapter() {
       return game ? persist() : null;
     },
 
+    async listBackups() {
+      return Promise.all(BACKUP_SLOTS.map(async (slot, index) => {
+        const found = (await slotCandidates([slot]).next()).value;
+        return { slot, number: index + 1, exists: !!found, ...found?.metadata };
+      }));
+    },
+
+    async saveBackup(slot) {
+      if (!game || !BACKUP_SLOTS.includes(slot)) throw new Error('백업 슬롯을 다시 선택하세요.');
+      const metadata = { agencyName: game.agency.name, date: dateLabel(game.week, mod) };
+      if (!await writeSlotBlob(await packGame(), slot, metadata)) throw new Error('백업을 저장하지 못했습니다.');
+      notice = '백업을 저장했습니다.';
+      return snap();
+    },
+
+    async restoreBackup(slot) {
+      if (!game || !BACKUP_SLOTS.includes(slot)) throw new Error('백업 슬롯을 다시 선택하세요.');
+      for await (const candidate of slotCandidates([slot])) {
+        let restored;
+        try { restored = await parseCandidate(mod, candidate); }
+        catch { continue; }
+        if (!validGame(restored) || !candidate.blob) continue;
+        if (!await writeSlotBlob(candidate.blob, ACTIVE_SLOT)) throw new Error('백업을 불러오지 못했습니다. 현재 진행은 유지됩니다.');
+        clearRawSave();
+        game = restored;
+        table = negoOpen = null;
+        warnedCommon = false;
+        saved = true;
+        notice = '백업을 불러왔습니다.';
+        return snap();
+      }
+      throw new Error('이 슬롯에서 읽을 수 있는 백업을 찾지 못했습니다.');
+    },
+
     async resetSave() {
-      for (const slot of [0, 1, 2, 3]) await deleteSlot(slot);
+      for (const slot of [...CONTINUE_SLOTS, ...BACKUP_SLOTS]) await deleteSlot(slot);
       clearRawSave();
       clearHasSaveFlag();
       saveProbe = null;
