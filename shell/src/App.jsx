@@ -76,7 +76,7 @@ export default function App() {
     setRoute('brief');
     setProgress(0);
     void run(mode, mode === 'new'
-      ? () => adapter.newGame({ agencyName }, (value) => setProgress(Math.round((Number(value) || 0) * 100)))
+      ? () => adapter.newGame({ agencyName }, (value) => setProgress(Math.round((Number(value) || 0) * 100)), setSnapshot)
       : () => adapter.loadSave());
   }
 
@@ -136,6 +136,7 @@ export default function App() {
           </header>
 
           <main className="workspace" id="content">
+            {busy === 'new' && snapshot.saved === undefined && <div className="feedback" role="status">첫 저장 중…</div>}
             {snapshot.saved === false && (
               <div className="save-warning" role="status">
                 <span>저장하지 못했습니다. 앱을 닫기 전에 다시 저장하세요.</span>
@@ -159,7 +160,7 @@ export default function App() {
 
           {route === 'brief' && !snapshot.negoOpen && (
             <div className="advance-bar">
-              <div><strong>{snapshot.nextDateLabel ?? '주간 진행'}</strong><span>{busy === 'week' ? '경기와 일정을 계산 중' : adapter.canAdvance().reason || '진행 예정일'}</span></div>
+              <div><strong>{snapshot.nextDateLabel ?? '주간 진행'}</strong><span>{busy === 'week' ? '경기와 일정을 계산 중' : busy === 'new' ? '첫 저장 중' : adapter.canAdvance().reason || '진행 예정일'}</span></div>
               <button className="primary advance" disabled={!!busy} onClick={() => advance()}>
                 {busy === 'week' ? '진행 중…' : '다음 주'}<span aria-hidden="true">›</span>
               </button>
@@ -177,12 +178,12 @@ export default function App() {
           )}</ul>}
           <div className="actions">
             {item.done ? <button className="primary" onClick={closeDialog}>확인</button>
-              : item.terms ? <button className="primary" onClick={() => resolve(item, 'negotiate')}>제안 검토</button>
+              : item.terms ? <button className="primary" disabled={!!busy} onClick={() => resolve(item, 'negotiate')}>제안 검토</button>
               : item.choices?.length ? item.choices.map((choice, index) => (
-                <button key={index} disabled={choice.lock} className={index === 0 ? 'primary' : 'secondary'} onClick={() => resolve(item, index)}>
+                <button key={index} disabled={!!busy || choice.lock} className={index === 0 ? 'primary' : 'secondary'} onClick={() => resolve(item, index)}>
                   {choice.label}{choice.hint && <small>{choice.hint}</small>}
                 </button>
-              )) : <button className="primary" onClick={() => resolve(item, 'dismiss')}>확인</button>}
+              )) : <button className="primary" disabled={!!busy} onClick={() => resolve(item, 'dismiss')}>확인</button>}
           </div>
         </Dialog>
       )}

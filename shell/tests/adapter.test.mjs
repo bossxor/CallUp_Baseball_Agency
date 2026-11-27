@@ -38,7 +38,12 @@ test('continues a committed gzip world and advances week zero through the engine
     }
   };
   globalThis.window = {
-    Capacitor: { Plugins: { Filesystem: fs } },
+    Capacitor: { Plugins: { Filesystem: new Proxy(fs, {
+      get(plugin, key) {
+        if (key === 'then') throw new Error('Capacitor proxy must not be treated as a promise');
+        return plugin[key];
+      },
+    }) } },
     CallUpEngine: {
       *eA() { return { week: 0, agency: { name: 'QA', money: 100 }, clubs: [], players: {}, inbox: [] }; },
       *eK(game) {
@@ -86,6 +91,17 @@ test('continues a committed gzip world and advances week zero through the engine
   for (const key of [...files.keys()]) if (key.startsWith('saves/slot0.')) files.delete(key);
   assert.equal(await createEngineAdapter().probeHasSave(), true);
   assert.equal((await createEngineAdapter().loadSave()).week, 2, 'legacy slot files remain readable');
+
+  window.Capacitor.getPlatform = () => 'web';
+  fs.stat = async ({ path }) => ({ size: mustRead(path).size ?? mustRead(path).length });
+  fs.writeFile = async ({ path, data }) => files.set(path, data);
+  fs.readFile = async ({ path }) => ({ data: mustRead(path) });
+  files.set('saves/slot1.fasave', mustRead('saves/slot1.fasave').toString('base64'));
+  const webReader = createEngineAdapter();
+  assert.equal((await webReader.loadSave()).week, 2, 'web legacy files report encoded size');
+  assert.equal((await webReader.advanceWeek()).saved, true);
+  assert.ok(files.get('saves/slot0.bin') instanceof Blob);
+  assert.equal((await createEngineAdapter().loadSave()).week, 3);
 });
 
 test('snapshot uses the engine calendar and age without collapsing week zero', async () => {
@@ -100,4 +116,68 @@ test('snapshot uses the engine calendar and age without collapsing week zero', a
   assert.equal(snapshot.week, 0);
   assert.equal(snapshot.clients[0].age, 22);
   assert.equal(snapshot.clients[0].ovr, 64);
+});
+
+test('default new games open the verified bundled world and keep explicit seeds available', async () => {
+  const { loadStarterWorld } = await import('../src/adapter/worldgen.js');
+  const originalFetch = globalThis.fetch;
+  window.location = { href: 'https://localhost/index.html' };
+  globalThis.fetch = async (url) => {
+    assert.equal(url.pathname, '/callup-starter-v1.bin');
+    return new Response(new Uint8Array([31, 139]));
+  };
+  const mod = { async cA() {
+    return { week: 0, seed: 71, agency: { name: '콜업 에이전시', callupBaseball1: true },
+      clubs: [], players: {}, inbox: [{ kind: 'scout' }] };
+  } };
+  try {
+    assert.equal(await loadStarterWorld(mod, { seed: 4 }), null);
+    const game = await loadStarterWorld(mod, { agencyName: '하이파이브' });
+    assert.equal(game.agency.name, '하이파이브');
+    assert.equal(game.inbox[0].kind, 'scout');
+    assert.ok(Number.isSafeInteger(game.seed));
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete window.location;
+  }
+});
+
+test('offline WebView reads legacy records and writes to a separate committed slot', async () => {
+  const { slotCandidates, writeSlotBlob } = await import('../src/adapter/diskSave.js');
+  const oldBlob = new Blob([new Uint8Array([31, 139, 1])]);
+  const newBlob = new Blob([new Uint8Array([31, 139, 2])]);
+  const records = new Map([['slot1', { blob: oldBlob }]]);
+  const database = {
+    transaction(name) {
+      assert.equal(name, 'saves');
+      const transaction = { objectStore: () => ({
+        get(key) {
+          queueMicrotask(() => transaction.oncomplete());
+          return { result: records.get(key) };
+        },
+        put(value, key) {
+          queueMicrotask(() => { records.set(key, value); transaction.oncomplete(); });
+          return { result: key };
+        },
+      }) };
+      return transaction;
+    },
+  };
+  window.SignHereSaveExport = {};
+  globalThis.indexedDB = { open(name, version) {
+    assert.equal(name, 'football-agency');
+    assert.equal(version, 1);
+    const request = { result: database };
+    queueMicrotask(() => request.onsuccess());
+    return request;
+  } };
+  try {
+    assert.equal((await slotCandidates().next()).value.blob, oldBlob);
+    assert.equal(await writeSlotBlob(newBlob), true);
+    assert.equal(records.get('slot1').blob, oldBlob);
+    assert.equal((await slotCandidates().next()).value.blob, newBlob);
+  } finally {
+    delete window.SignHereSaveExport;
+    delete globalThis.indexedDB;
+  }
 });

@@ -67,6 +67,26 @@ export async function runWorldGen(mod, opts = {}, onProgress) {
   return game;
 }
 
+export async function loadStarterWorld(mod, opts) {
+  if (!globalThis.window?.location?.href || opts.seed != null || opts.worldSeed != null ||
+      opts.agent || opts.nat || (opts.lang && opts.lang !== 'ko')) return null;
+  try {
+    const url = new URL('./callup-starter-v1.bin', window.location.href);
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const game = await parseSaveBlob(mod, await response.blob());
+    if (game?.week !== 0 || !game.agency || !game.agency.callupBaseball1 ||
+        !Array.isArray(game.clubs) || !game.players || !game.inbox?.some((entry) => entry.kind === 'scout')) return null;
+    game.agency.name = opts.agencyName || game.agency.name;
+    if (opts.logo != null) game.agency.logo = opts.logo;
+    game.seed = crypto.getRandomValues(new Uint32Array(1))[0];
+    return game;
+  } catch (error) {
+    console.warn('Starter world unavailable, generating a new world', error);
+    return null;
+  }
+}
+
 /** Gunzip engine save Blob → UTF-8 JSON text for offlineParseSave. */
 async function blobToSaveText(blob) {
   if (!blob || typeof blob.stream !== 'function') return null;

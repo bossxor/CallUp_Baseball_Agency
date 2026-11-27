@@ -11,7 +11,7 @@ import {
   slotCandidates,
   writeSlotBlob,
 } from './diskSave.js';
-import { blobToSaveText, parseSaveBlob, runWeekTick, runWorldGen, serializeWithEngine } from './worldgen.js';
+import { blobToSaveText, loadStarterWorld, parseSaveBlob, runWeekTick, runWorldGen, serializeWithEngine } from './worldgen.js';
 
 const ENGINE_SAVE_KEY = 'callup-engine-raw-v1';
 const ACTIVE_SLOT = 0;
@@ -263,14 +263,16 @@ export function createEngineAdapter() {
       })();
     },
 
-    async newGame(opts = {}, onProgress) {
+    async newGame(opts = {}, onProgress, onReady) {
       await requireEngine();
-      const world = await runWorldGen(mod, opts, onProgress);
+      const world = await loadStarterWorld(mod, opts) ?? await runWorldGen(mod, opts, onProgress);
       if (!validGame(world)) throw new Error('월드를 생성하지 못했습니다.');
       game = world;
       warnedCommon = false;
       negoOpen = null;
       notice = '';
+      saved = undefined;
+      onReady?.(snap());
       return persist();
     },
 

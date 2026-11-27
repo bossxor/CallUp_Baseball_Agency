@@ -8,8 +8,8 @@ export default function TitleScreen({ ready, hasSave, busy, progress, message, o
       <div className="entry-actions">
         {generating ? (
           <div className="generation">
-            <span role="status">{progress >= 100 ? '첫 시즌 준비 중…' : '야구 세계 생성 중'}</span>
-            <progress aria-label="야구 세계 생성" value={Math.max(0, Math.min(100, progress))} max="100" />
+            <span role="status">{progress > 0 && progress < 100 ? `야구 세계 생성 중 ${progress}%` : '첫 시즌 준비 중…'}</span>
+            <progress aria-label="첫 시즌 준비" value={progress > 0 ? Math.min(100, progress) : undefined} max="100" />
           </div>
         ) : !ready || busy === 'load' ? (
           <p role="status" className="entry-status">{busy ? '저장 불러오는 중…' : '저장 확인 중…'}</p>

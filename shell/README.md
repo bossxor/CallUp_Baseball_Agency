@@ -25,7 +25,9 @@ npm run build
 
 ## Adapter
 
-월드 생성과 주차 진행은 APK 엔진의 `eA`와 `eK`를 쓴다. 기기에서는 `saves/slot0.bin`에 gzip을 저장하고, 이전 슬롯과 `.fasave`도 읽는다.
+월드 생성과 주차 진행은 APK 엔진의 `eA`와 `eK`를 쓴다. 오프라인 APK는 기존 WebView 저장소에 gzip 슬롯을 기록한다. 이전 WebView 슬롯과 `saves/slot0.bin`, `.fasave`도 읽는다.
+
+기본 새 게임은 엔진으로 미리 만든 첫 시즌을 열고, 이후 주간 진행에는 새 게임 시드를 쓴다. 엔진 저장 포맷이 바뀌면 저장소 루트에서 `node tools/build-callup-starter.cjs`로 시작 월드를 다시 만든다.
 
 ```powershell
 node --test shell/tests/adapter.test.mjs
