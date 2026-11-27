@@ -5,6 +5,7 @@ import DeskScreen from './screens/DeskScreen.jsx';
 import RosterScreen from './screens/RosterScreen.jsx';
 import MoreScreen from './screens/MoreScreen.jsx';
 import LeagueScreen from './screens/LeagueScreen.jsx';
+import PlayerDetails from './screens/PlayerDetails.jsx';
 import NegoScreen from './screens/NegoScreen.jsx';
 import WorkspaceNav from './components/BottomNav.jsx';
 import { exactWon, formatWon, kindLabel } from './labels.js';
@@ -141,7 +142,7 @@ export default function App() {
     });
   }
 
-  const openPlayer = (player) => setDialog({ type: 'player', player, history: adapter.playerHistory?.(player.id) });
+  const openPlayer = (player) => setDialog({ type: 'player', player, details: adapter.playerDetails?.(player.id) });
   const closeNegotiation = (result) => void run('action', () => adapter.closeNegotiation(result));
 
   return (
@@ -267,15 +268,10 @@ export default function App() {
             <div><dt>포지션</dt><dd>{dialog.player.pos}</dd></div>
             <div><dt>나이</dt><dd>{dialog.player.age}세</dd></div>
             <div><dt>능력치</dt><dd>{dialog.player.ovr}</dd></div>
-            {dialog.history?.signed && <div><dt>에이전시 계약일</dt><dd>{dialog.history.signed}</dd></div>}
-            {dialog.history?.end && <div><dt>에이전시 만료일</dt><dd>{dialog.history.end}</dd></div>}
+            {dialog.details?.signed && <div><dt>에이전시 계약일</dt><dd>{dialog.details.signed}</dd></div>}
+            {dialog.details?.end && <div><dt>에이전시 만료일</dt><dd>{dialog.details.end}</dd></div>}
           </dl>
-          {dialog.history && <section aria-label="계약과 이적 이력">
-            <h3>계약·이적 이력</h3>
-            {dialog.history.moves.length ? <ul className="player-history">
-              {dialog.history.moves.map((event, index) => <li key={index}><strong>{event.text}</strong><small>{event.date}</small></li>)}
-            </ul> : <p>기록된 이적·재계약이 없습니다.</p>}
-          </section>}
+          {dialog.details && <PlayerDetails details={dialog.details} pitcher={dialog.player.pos === 'P'} />}
         </Dialog>
       )}
       {dialog?.type === 'advance' && (

@@ -100,6 +100,7 @@ export function mapGameToSnapshot(game, extras = {}) {
     pos: player.pos,
     age: mod?.offlineAge?.(player, week) ?? player.age,
     ovr: Math.round(player.ovr ?? 0),
+    appearances: player.st?.apps ?? 0,
     club: clubName(game, player),
   });
   const describeCandidate = (player) => ({
@@ -463,12 +464,27 @@ export function createEngineAdapter() {
       return persist();
     },
 
-    playerHistory(id) {
+    playerDetails(id) {
       const player = game?.players?.[id];
       if (!player) return null;
       const client = game.agency.clients?.[id];
       const scale = mod.offlineMoneyScale?.('KRW') ?? 1500;
+      const stats = player.st ?? {};
+      const games = stats.apps ?? 0;
       return {
+        games,
+        hits: stats.h ?? 0,
+        rbi: stats.rbi ?? 0,
+        rating: games > 0 && Number.isFinite(stats.rSum) ? stats.rSum / games : null,
+        seasons: (player.career ?? []).filter((season) => season.apps > 0).slice(-5).reverse().map((season) => ({
+          year: season.season, club: clubName(game, season), games: season.apps,
+          hits: season.goals ?? 0, rbi: season.ast ?? 0, rating: season.avg,
+        })),
+        recent: (player.log ?? []).filter((log) => Array.isArray(log) && Number.isSafeInteger(log[0])
+          && Number.isFinite(log[6]) && log[6] >= 0).slice(0, 6).map(([week, opponent, forRuns, againstRuns, hits, rbi, rating]) => ({
+          date: dateLabel(week, mod), opponent: clubName(game, { club: opponent }),
+          score: forRuns + '–' + againstRuns, rating: rating / 10, hits, rbi,
+        })),
         signed: Number.isSafeInteger(client?.since) ? dateLabel(client.since, mod) : null,
         end: Number.isSafeInteger(client?.until) ? dateLabel(client.until, mod) : null,
         moves: (player.timeline ?? []).filter((event) => event.kind === 'move' && Number.isSafeInteger(event.w))
