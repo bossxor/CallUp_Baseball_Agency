@@ -6,7 +6,7 @@ import RosterScreen from './screens/RosterScreen.jsx';
 import MoreScreen from './screens/MoreScreen.jsx';
 import NegoScreen from './screens/NegoScreen.jsx';
 import WorkspaceNav from './components/BottomNav.jsx';
-import { kindLabel } from './labels.js';
+import { formatWon, kindLabel } from './labels.js';
 
 const adapter = createAdapter();
 
@@ -99,6 +99,12 @@ export default function App() {
     void run('action', () => adapter.resolveAgenda(item.id, action));
   }
 
+  async function signCandidate(report, player) {
+    closeDialog();
+    const next = await run('action', () => adapter.signScoutCandidate(report.id, player.id));
+    if (next?.clients.some((client) => client.id === player.id)) setRoute('roster');
+  }
+
   function reset() {
     closeDialog();
     void run('action', async () => {
@@ -174,7 +180,12 @@ export default function App() {
           <p className="term">{kindLabel(item.kind)}</p>
           {item.body && <p>{item.body}</p>}
           {item.candidates?.length > 0 && <ul className="prospects">{item.candidates.map((player) =>
-            <li key={player.id}><b>{player.name}</b><span>{player.pos} · {player.age}세</span><span>OVR {player.ovr}</span></li>
+            <li key={player.id}>
+              <div><b>{player.name}</b><span>{player.pos} · {player.age}세 · OVR {player.ovr}</span></div>
+              {player.contracted ? <span>계약 완료</span> : player.contract && (
+                <button className="secondary" onClick={() => setDialog({ type: 'recruit', item, player })}>계약 검토</button>
+              )}
+            </li>
           )}</ul>}
           <div className="actions">
             {item.done ? <button className="primary" onClick={closeDialog}>확인</button>
@@ -184,6 +195,20 @@ export default function App() {
                   {choice.label}{choice.hint && <small>{choice.hint}</small>}
                 </button>
               )) : <button className="primary" disabled={!!busy} onClick={() => resolve(item, 'dismiss')}>확인</button>}
+          </div>
+        </Dialog>
+      )}
+      {dialog?.type === 'recruit' && (
+        <Dialog title={`${dialog.player.name} 계약 제안`} onClose={closeDialog}>
+          <p className="term">{dialog.player.club} · {dialog.player.pos} · {dialog.player.age}세</p>
+          <dl className="terms">
+            <div><dt>계약 기간</dt><dd>{dialog.player.contract.years}년</dd></div>
+            <div><dt>에이전시 수수료율</dt><dd>{dialog.player.contract.fee * 100}%</dd></div>
+            {dialog.player.contract.cost != null && <div><dt>예상 계약 비용</dt><dd>{formatWon(dialog.player.contract.cost)}</dd></div>}
+          </dl>
+          <div className="actions">
+            <button className="secondary" onClick={() => setDialog({ type: 'agenda', item })}>보고서로</button>
+            <button className="primary" disabled={!!busy} onClick={() => signCandidate(item, dialog.player)}>계약 제안 보내기</button>
           </div>
         </Dialog>
       )}

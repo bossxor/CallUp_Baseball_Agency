@@ -29,6 +29,8 @@ npm run build
 
 기본 새 게임은 엔진으로 미리 만든 첫 시즌을 열고, 이후 주간 진행에는 새 게임 시드를 쓴다. 엔진 저장 포맷이 바뀌면 저장소 루트에서 `node tools/build-callup-starter.cjs`로 시작 월드를 다시 만든다.
 
+스카우트 보고서에서 후보의 계약을 검토하고 제안할 수 있다. 계약 결과와 비용은 기존 엔진이 처리하고, 계약이 성사된 선수는 선수단에 표시된다.
+
 ```powershell
 node --test shell/tests/adapter.test.mjs
 ```

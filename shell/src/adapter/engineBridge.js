@@ -15,6 +15,7 @@ import { blobToSaveText, loadStarterWorld, parseSaveBlob, runWeekTick, runWorldG
 
 const ENGINE_SAVE_KEY = 'callup-engine-raw-v1';
 const ACTIVE_SLOT = 0;
+const SCOUT_CONTRACT = { years: 2, fee: .05 };
 const TIER_RANK = { common: 0, rare: 1, unique: 2, epic: 3, legend: 4 };
 
 const TIER_MAP = {
@@ -47,6 +48,10 @@ function dateLabel(week, mod) {
   return mod?.d?.(week) ?? new Date(Date.UTC(2026, 6, 1 + week * 7)).toISOString().slice(0, 10).replaceAll('-', '.');
 }
 
+function scoutIds(report) {
+  return Object.entries(report.data ?? {}).filter(([key]) => /^p\d+$/.test(key)).map(([, id]) => id);
+}
+
 export function mapGameToSnapshot(game, extras = {}) {
   const agency = game.agency || {};
   const inbox = Array.isArray(game.inbox) ? game.inbox : [];
@@ -60,6 +65,15 @@ export function mapGameToSnapshot(game, extras = {}) {
     age: mod?.offlineAge?.(player, week) ?? player.age,
     ovr: Math.round(player.ovr ?? 0),
     club: clubName(game, player),
+  });
+  const describeCandidate = (player) => ({
+    ...describe(player),
+    contracted: Boolean(agency.clients?.[player.id]),
+    contract: mod?.w && !player.retired && player.agent !== 2 ? {
+      years: SCOUT_CONTRACT.years,
+      fee: SCOUT_CONTRACT.fee,
+      cost: mod.A && mod.B ? (mod.A(game, player, SCOUT_CONTRACT.years) + mod.B(player)) * scale : null,
+    } : null,
   });
   const moneyText = (value) => String(value ?? '').replace(/¤(-?\d+)¤/g, (_, amount) => `${(Number(amount) * scale).toLocaleString('ko-KR')}원`);
   const entries = inbox
@@ -75,9 +89,8 @@ export function mapGameToSnapshot(game, extras = {}) {
       player: game.players?.[m.pid]?.name,
       expires: Number.isSafeInteger(m.expires) ? m.expires - week : null,
       choices: m.choices?.map(({ label, hint, lock }) => ({ label: moneyText(label), hint: moneyText(hint), lock })) ?? [],
-      candidates: m.kind === 'scout' ? Object.entries(m.data ?? {})
-        .filter(([key, id]) => /^p\d+$/.test(key) && game.players?.[id])
-        .map(([, id]) => describe(game.players[id])) : [],
+      candidates: m.kind === 'scout' ? scoutIds(m).map((id) => game.players?.[id])
+        .filter((player) => player && !player.retired).map(describeCandidate) : [],
       terms: m.kind === 'offer' || m.kind === 'renewal' ? {
         club: clubName(game, m.data?.club != null ? { club: m.data.club } : game.players?.[m.pid]),
         wage: Number.isFinite(m.data?.wage) ? m.data.wage * scale : null,
@@ -328,6 +341,19 @@ export function createEngineAdapter() {
       }
       const choice = Number.isInteger(action) ? action : item.def ?? 0;
       notice = resolve(game, item, choice) || '';
+      return persist();
+    },
+
+    async signScoutCandidate(reportId, candidateId) {
+      const report = game?.inbox?.find((item) => String(item.id) === String(reportId) && item.kind === 'scout');
+      if (!report || !scoutIds(report).includes(candidateId) || !game.players?.[candidateId] || !mod?.w) {
+        throw new Error('이 보고서에서 선수에게 계약을 제안할 수 없습니다.');
+      }
+      const result = mod.w(game, candidateId, SCOUT_CONTRACT);
+      if (result.ok && scoutIds(report).every((id) => game.agency.clients[id] || game.players[id]?.retired)) {
+        report.done = true;
+      }
+      notice = result.text;
       return persist();
     },
 

@@ -11,7 +11,7 @@
  * @property {boolean} [done]
  * @property {?number} [expires] Weeks until the response is due.
  * @property {{label: string, hint?: string, lock?: boolean}[]} [choices]
- * @property {ClientCard[]} [candidates]
+ * @property {Array<ClientCard & {contracted: boolean, contract: {years: number, fee: number, cost: ?number} | null}>} [candidates]
  * @property {{club: string, wage: ?number, years: ?number}} [terms]
  */
 
