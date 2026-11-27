@@ -79,7 +79,7 @@ function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch, onFacili
   );
 }
 
-export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch, onFacilities, onCompare }) {
+export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch, onFacilities, onCompare, onLeagues }) {
   const brief = route === 'brief';
   const isScout = route === 'scout';
   const rows = agenda.filter((item) => brief || (isScout ? item.kind === 'scout' : item.terms))
@@ -109,6 +109,7 @@ export default function DeskScreen({ route, agenda, week, funds, onOpen, scoutin
           </dl>
         </section>
       ) : <div className="page-title"><h1>{isScout ? '스카우트' : '계약'}</h1></div>}
+      {brief && onLeagues && <div className="brief-links"><button className="secondary" onClick={onLeagues}>리그 순위</button></div>}
       {isScout && scouting?.markets.length > 0 && <ScoutDispatch scouting={scouting} funds={funds} busy={busy} quoteScout={quoteScout} onDispatch={onDispatch} onFacilities={onFacilities} />}
       {comparisons.length > 0 && <section className="register offer-compare">
         <header className="register-head"><h2>구단별 조건 비교</h2></header>

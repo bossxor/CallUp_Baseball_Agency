@@ -4,6 +4,7 @@ import TitleScreen from './screens/TitleScreen.jsx';
 import DeskScreen from './screens/DeskScreen.jsx';
 import RosterScreen from './screens/RosterScreen.jsx';
 import MoreScreen from './screens/MoreScreen.jsx';
+import LeagueScreen from './screens/LeagueScreen.jsx';
 import NegoScreen from './screens/NegoScreen.jsx';
 import WorkspaceNav from './components/BottomNav.jsx';
 import { exactWon, formatWon, kindLabel } from './labels.js';
@@ -157,6 +158,9 @@ export default function App() {
                 onRound={(action, tactic) => void run('action', () => adapter.negotiationRound(action, tactic))} />
             ) : route === 'roster' ? (
               <RosterScreen clients={snapshot.clients} onOpen={openPlayer} />
+            ) : route === 'leagues' ? (
+              <LeagueScreen leagues={adapter.listLeagues()} getStandings={(id) => adapter.leagueStandings(id)}
+                onRename={(club) => setDialog({ type: 'rename-club', club })} />
             ) : route === 'settings' ? (
               <MoreScreen busy={busy} saved={snapshot.saved} onSave={refreshSave}
                 facilities={snapshot.facilities} ledger={snapshot.ledger} funds={snapshot.funds}
@@ -165,6 +169,7 @@ export default function App() {
                 onReset={() => setDialog({ type: 'reset' })} />
             ) : (
               <DeskScreen route={route} agenda={route === 'scout' ? snapshot.reports ?? snapshot.agenda : snapshot.agenda} week={snapshot.week} funds={snapshot.funds}
+                onLeagues={adapter.listLeagues && (() => go('leagues'))}
                 scouting={snapshot.scouting} busy={!!busy} onFacilities={() => go('settings')}
                 quoteScout={(criteria) => adapter.quoteScout?.(criteria)}
                 onDispatch={(criteria) => void run('action', () => adapter.dispatchScout(criteria))}
@@ -272,6 +277,29 @@ export default function App() {
             <input id="agency-name" name="agency" maxLength={24} defaultValue="콜업 에이전시" />
             {hasSave && <p>새 게임 저장에 성공하면 현재 이어하기 슬롯을 교체합니다.</p>}
             <div className="actions"><button className="primary" type="submit">새 게임 시작</button></div>
+          </form>
+        </Dialog>
+      )}
+      {dialog?.type === 'rename-club' && (
+        <Dialog title="구단명 편집" onClose={closeDialog}>
+          <form className="new-agency" onSubmit={(event) => {
+            event.preventDefault();
+            const name = new FormData(event.currentTarget).get('club');
+            const id = dialog.club.id;
+            closeDialog();
+            void run('action', () => adapter.renameClub(id, name));
+          }}>
+            <label htmlFor="club-name">구단명</label>
+            <input id="club-name" name="club" maxLength={24} defaultValue={dialog.club.name} required />
+            <small>기본 구단명 · {dialog.club.original}</small>
+            <div className="actions">
+              {dialog.club.name !== dialog.club.original && <button className="secondary" type="button" disabled={!!busy} onClick={() => {
+                const id = dialog.club.id;
+                closeDialog();
+                void run('action', () => adapter.renameClub(id, ''));
+              }}>기본 이름 복원</button>}
+              <button className="primary" type="submit" disabled={!!busy}>구단명 저장</button>
+            </div>
           </form>
         </Dialog>
       )}

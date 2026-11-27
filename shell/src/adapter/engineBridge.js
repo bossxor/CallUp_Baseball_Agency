@@ -15,6 +15,7 @@ import { blobToSaveText, loadStarterWorld, parseSaveBlob, runWeekTick, runWorldG
 
 import { SCOUT_MARKETS, SCOUT_POSITIONS } from '../labels.js';
 
+const BASEBALL_LEAGUES = ['KOR1', 'KOR2', 'JPN1', 'JPN2', 'GER1', 'USA1', 'USA2'];
 const FACILITIES = ['scout', 'admin', 'medical', 'training'];
 const ENGINE_SAVE_KEY = 'callup-engine-raw-v1';
 const ACTIVE_SLOT = 0;
@@ -392,6 +393,38 @@ export function createEngineAdapter() {
     getSnapshot: snap,
     listAgenda: () => snap()?.agenda ?? [],
     listClients: () => snap()?.clients ?? [],
+
+    listLeagues() {
+      return BASEBALL_LEAGUES.filter((id) => game?.leagues?.[id] && mod?.j?.[id])
+        .map((id) => ({ id, name: mod.j[id].name }));
+    },
+
+    leagueStandings(leagueId) {
+      if (!game || !BASEBALL_LEAGUES.includes(leagueId)) return [];
+      const league = game.leagues?.[leagueId];
+      if (!league) return [];
+      const table = mod.c$(league);
+      const played = table.some((row) => row.p > 0);
+      return table.filter((row) => game.clubs[row.club]).map((row, index) => ({
+        id: row.club, name: clubName(game, { club: row.club }), original: game.clubs[row.club].name,
+        rank: played ? index + 1 : null,
+        wins: row.w, losses: row.l, ties: row.d,
+        rate: row.w + row.l > 0 ? row.w / (row.w + row.l) : null,
+      }));
+    },
+
+    async renameClub(id, name) {
+      const club = game?.clubs?.[id];
+      const alias = String(name ?? '').trim();
+      if (!club || !BASEBALL_LEAGUES.includes(club.league) || alias.length > 24) {
+        throw new Error('구단명은 24자 이내로 입력하세요.');
+      }
+      const names = game.agency.clubNick ??= {};
+      if (alias && alias !== club.name) names[id] = alias;
+      else delete names[id];
+      notice = alias && alias !== club.name ? '구단명을 변경했습니다.' : '기본 구단명으로 복원했습니다.';
+      return persist();
+    },
 
     playerHistory(id) {
       const player = game?.players?.[id];
