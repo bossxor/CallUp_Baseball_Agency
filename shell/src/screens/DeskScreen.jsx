@@ -49,11 +49,21 @@ function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch, onFacili
   );
 }
 
-export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch, onFacilities }) {
+export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch, onFacilities, onCompare }) {
   const brief = route === 'brief';
   const isScout = route === 'scout';
   const rows = agenda.filter((item) => brief || (isScout ? item.kind === 'scout' : item.terms))
     .sort((a, b) => isScout ? Number(b.id) - Number(a.id) : (a.expires ?? Infinity) - (b.expires ?? Infinity) || Number(urgent.has(b.tier)) - Number(urgent.has(a.tier)));
+
+  const byPlayer = new Map();
+  if (route === 'contracts') {
+    for (const row of rows) {
+      if (row.kind !== 'offer' || !row.player) continue;
+      if (!byPlayer.has(row.pid)) byPlayer.set(row.pid, []);
+      byPlayer.get(row.pid).push(row);
+    }
+  }
+  const comparisons = [...byPlayer.values()].filter((offers) => new Set(offers.map((offer) => offer.terms.club)).size > 1);
 
   return (
     <>
@@ -70,6 +80,14 @@ export default function DeskScreen({ route, agenda, week, funds, onOpen, scoutin
         </section>
       ) : <div className="page-title"><h1>{isScout ? '스카우트' : '계약'}</h1></div>}
       {isScout && scouting?.markets.length > 0 && <ScoutDispatch scouting={scouting} funds={funds} busy={busy} quoteScout={quoteScout} onDispatch={onDispatch} onFacilities={onFacilities} />}
+      {comparisons.length > 0 && <section className="register offer-compare">
+        <header className="register-head"><h2>구단별 조건 비교</h2></header>
+        <ul className="settings-list">{comparisons.map((offers) => (
+          <li key={offers[0].pid}><strong>{offers[0].player}</strong>
+            <button className="secondary" onClick={() => onCompare(offers)}>{offers.length}건 비교</button>
+          </li>
+        ))}</ul>
+      </section>}
       <section className="register" aria-label={brief ? '처리할 안건' : isScout ? '받은 보고서' : '받은 제안'}>
         <header className="register-head">
           <h2>{brief ? '처리할 안건' : isScout ? '받은 보고서' : '받은 제안'}</h2>

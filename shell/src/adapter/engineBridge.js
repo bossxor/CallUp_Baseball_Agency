@@ -51,6 +51,10 @@ function dateLabel(week, mod) {
   return mod?.d?.(week) ?? new Date(Date.UTC(2026, 6, 1 + week * 7)).toISOString().slice(0, 10).replaceAll('-', '.');
 }
 
+function moneyLabel(value, scale) {
+  return String(value ?? '').replace(/¤(-?\d+)¤/g, (_, amount) => (Number(amount) * scale).toLocaleString('ko-KR') + '원');
+}
+
 function scoutFilter(region, pos) {
   return { region, pos, ageMax: 23, tier: 0, grade: 'all', age: 'base' };
 }
@@ -97,7 +101,7 @@ export function mapGameToSnapshot(game, extras = {}) {
       cost: mod.A && mod.B ? (mod.A(game, player, SCOUT_CONTRACT.years) + mod.B(player)) * scale : null,
     } : null,
   });
-  const moneyText = (value) => String(value ?? '').replace(/¤(-?\d+)¤/g, (_, amount) => `${(Number(amount) * scale).toLocaleString('ko-KR')}원`);
+  const moneyText = (value) => moneyLabel(value, scale);
   const entries = inbox
     .filter((m) => m && (!m.done || m.kind === 'scout'))
     .map((m) => ({
@@ -117,6 +121,8 @@ export function mapGameToSnapshot(game, extras = {}) {
         club: clubName(game, m.data?.club != null ? { club: m.data.club } : game.players?.[m.pid]),
         wage: Number.isFinite(m.data?.wage) ? m.data.wage * scale : null,
         years: m.data?.years ?? null,
+        fee: Number.isFinite(m.data?.fee) ? m.data.fee * scale : null,
+        seasonSalary: Boolean(m.data?.seasonEnd),
       } : null,
     }));
 
@@ -256,6 +262,7 @@ export function createEngineAdapter() {
   let game = null;
   let warnedCommon = false;
   let negoOpen = null;
+  let table = null;
   let mod = null;
   let saved = false;
   let notice = '';
@@ -324,7 +331,7 @@ export function createEngineAdapter() {
       if (!validGame(world)) throw new Error('월드를 생성하지 못했습니다.');
       game = world;
       warnedCommon = false;
-      negoOpen = null;
+      table = negoOpen = null;
       notice = '';
       saved = undefined;
       onReady?.(snap());
@@ -339,7 +346,7 @@ export function createEngineAdapter() {
           if (!validGame(loaded)) continue;
           game = loaded;
           warnedCommon = false;
-          negoOpen = null;
+          table = negoOpen = null;
           saved = true;
           notice = '';
           markHasSave();
@@ -361,12 +368,25 @@ export function createEngineAdapter() {
       clearHasSaveFlag();
       saveProbe = null;
       saved = false;
-      game = negoOpen = null;
+      game = table = negoOpen = null;
     },
 
     getSnapshot: snap,
     listAgenda: () => snap()?.agenda ?? [],
     listClients: () => snap()?.clients ?? [],
+
+    playerHistory(id) {
+      const player = game?.players?.[id];
+      if (!player) return null;
+      const client = game.agency.clients?.[id];
+      const scale = mod.offlineMoneyScale?.('KRW') ?? 1500;
+      return {
+        signed: Number.isSafeInteger(client?.since) ? dateLabel(client.since, mod) : null,
+        end: Number.isSafeInteger(client?.until) ? dateLabel(client.until, mod) : null,
+        moves: (player.timeline ?? []).filter((event) => event.kind === 'move' && Number.isSafeInteger(event.w))
+          .slice(-12).reverse().map((event) => ({ date: dateLabel(event.w, mod), text: moneyLabel(event.text, scale) })),
+      };
+    },
 
     openNegotiation(agendaId) {
       const item = snap()?.agenda.find((entry) => entry.id === String(agendaId) && entry.terms);
@@ -446,10 +466,53 @@ export function createEngineAdapter() {
       return persist();
     },
 
+    startNegotiation() {
+      if (!game || !negoOpen || table || negoOpen.terms?.seasonSalary) return snap();
+      const next = structuredClone(game);
+      const item = next.inbox.find((entry) => String(entry.id) === negoOpen.id && !entry.done);
+      if (!item?.data || !next.players[item.pid]) throw new Error('제안 조건을 다시 확인하세요.');
+      const deal = item.kind === 'renewal' ? mod.dr(next, item)
+        : item.data.aucFee ? mod.ds(next, item, item.data.aucFee) : mod.dt(next, item);
+      if (!deal) throw new Error('현재는 이 제안으로 협상을 시작할 수 없습니다.');
+      table = { next, deal };
+      return this.negotiationRound();
+    },
+
+    async negotiationRound(action, tactic) {
+      if (!table || !negoOpen) return snap();
+      const { next, deal } = table;
+      if (action === 'accept') mod.dK(next, deal);
+      else if (action === 'leave') mod.dH(next, deal);
+      else if (action === 'duration') mod.dI(next, deal);
+      else if (action === 'keepDuration') mod.dJ(deal);
+      else if (action === 'clause' && Object.hasOwn(mod.dh, tactic) && mod.dj(deal, tactic)) mod.dF(next, deal, tactic);
+      else if (action === 'demand' && mod.dy(next, deal)
+        && mod.dD(next, deal).includes(tactic) && !deal.used.includes(tactic)) mod.dG(next, deal, tactic);
+      const scale = mod.offlineMoneyScale?.('KRW') ?? 1500;
+      if (deal.state !== 'open') {
+        game = next;
+        table = negoOpen = null;
+        notice = deal.result || '협상을 마쳤습니다.';
+        return persist();
+      }
+      const tactics = mod.dy(next, deal) ? mod.dD(next, deal).filter((id) => !deal.used.includes(id)) : [];
+      negoOpen = { ...negoOpen, live: {
+        phase: deal.phase, offer: deal.offer * scale, fee: deal.fee * scale, years: deal.years,
+        patience: deal.patience,
+        durationOffer: deal.yOffer && mod.dB(deal) ? { years: deal.yOffer.y, wage: deal.yOffer.wage * scale } : null,
+        clauses: Object.entries(mod.dh).filter(([id]) => mod.dj(deal, id)).map(([id, data]) => ({ id, ...data })),
+        agreedClauses: (deal.clauses ?? []).map((id) => mod.dh[id]?.label ?? id),
+        lines: deal.lines.slice(-6).map(({ text, who }) => ({ text: moneyLabel(text, scale), who })),
+        tactics: tactics.map((id) => ({ id, label: mod.dk[id].label })),
+      } };
+      return snap();
+    },
+
     async closeNegotiation(result = 'cancel') {
       if (!negoOpen) return snap();
       const id = negoOpen.id;
       negoOpen = null;
+      table = null;
       if (result === 'cancel') return snap();
       return this.resolveAgenda(id, result === 'deal' ? 0 : result === 'counter' ? 1 : 2);
     },

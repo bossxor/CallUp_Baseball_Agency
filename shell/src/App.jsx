@@ -123,6 +123,7 @@ export default function App() {
   };
   const refreshSave = () => void run('save', () => adapter.saveGame?.());
   const item = dialog?.item;
+  const openPlayer = (player) => setDialog({ type: 'player', player, history: adapter.playerHistory?.(player.id) });
   const closeNegotiation = (result) => void run('action', () => adapter.closeNegotiation(result));
 
   return (
@@ -151,9 +152,11 @@ export default function App() {
             )}
             {message && <div className="feedback" role="status"><span>{message}</span><button className="quiet" onClick={() => setMessage('')}>닫기</button></div>}
             {snapshot.negoOpen ? (
-              <NegoScreen nego={snapshot.negoOpen} busy={!!busy} onClose={closeNegotiation} />
+              <NegoScreen nego={snapshot.negoOpen} busy={!!busy} onClose={closeNegotiation}
+                onStart={adapter.startNegotiation && (() => void run('action', () => adapter.startNegotiation()))}
+                onRound={(action, tactic) => void run('action', () => adapter.negotiationRound(action, tactic))} />
             ) : route === 'roster' ? (
-              <RosterScreen clients={snapshot.clients} onOpen={(player) => setDialog({ type: 'player', player })} />
+              <RosterScreen clients={snapshot.clients} onOpen={openPlayer} />
             ) : route === 'settings' ? (
               <MoreScreen busy={busy} saved={snapshot.saved} onSave={refreshSave}
                 facilities={snapshot.facilities} ledger={snapshot.ledger} funds={snapshot.funds}
@@ -165,6 +168,7 @@ export default function App() {
                 scouting={snapshot.scouting} busy={!!busy} onFacilities={() => go('settings')}
                 quoteScout={(region, pos) => adapter.quoteScout?.(region, pos)}
                 onDispatch={(region, pos) => void run('action', () => adapter.dispatchScout(region, pos))}
+                onCompare={(offers) => setDialog({ type: 'compare', offers })}
                 onOpen={(entry) => setDialog({ type: 'agenda', item: entry })} />
             )}
           </main>
@@ -217,6 +221,22 @@ export default function App() {
           </div>
         </Dialog>
       )}
+      {dialog?.type === 'compare' && (
+        <Dialog title={'제안 비교 · ' + dialog.offers[0].player} onClose={closeDialog}>
+          <ul className="offer-comparison">
+            {dialog.offers.map((offer) => <li key={offer.id}>
+              <h3>{offer.terms.club}</h3>
+              <dl className="terms">
+                <div><dt>연봉</dt><dd>{formatWon(offer.terms.wage)}</dd></div>
+                <div><dt>기간</dt><dd>{offer.terms.years ? offer.terms.years + '년' : '—'}</dd></div>
+                <div><dt>계약금</dt><dd>{offer.terms.fee > 0 ? formatWon(offer.terms.fee) : '—'}</dd></div>
+                {offer.expires != null && <div><dt>기한</dt><dd>{offer.expires > 0 ? offer.expires + '주 남음' : '마감 임박'}</dd></div>}
+              </dl>
+              <button className="secondary" onClick={() => setDialog({ type: 'agenda', item: offer })}>제안 열기</button>
+            </li>)}
+          </ul>
+        </Dialog>
+      )}
       {dialog?.type === 'player' && (
         <Dialog title={dialog.player.name} onClose={closeDialog}>
           <dl className="terms">
@@ -224,7 +244,15 @@ export default function App() {
             <div><dt>포지션</dt><dd>{dialog.player.pos}</dd></div>
             <div><dt>나이</dt><dd>{dialog.player.age}세</dd></div>
             <div><dt>능력치</dt><dd>{dialog.player.ovr}</dd></div>
+            {dialog.history?.signed && <div><dt>에이전시 계약일</dt><dd>{dialog.history.signed}</dd></div>}
+            {dialog.history?.end && <div><dt>에이전시 만료일</dt><dd>{dialog.history.end}</dd></div>}
           </dl>
+          {dialog.history && <section aria-label="계약과 이적 이력">
+            <h3>계약·이적 이력</h3>
+            {dialog.history.moves.length ? <ul className="player-history">
+              {dialog.history.moves.map((event, index) => <li key={index}><strong>{event.text}</strong><small>{event.date}</small></li>)}
+            </ul> : <p>기록된 이적·재계약이 없습니다.</p>}
+          </section>}
         </Dialog>
       )}
       {dialog?.type === 'advance' && (

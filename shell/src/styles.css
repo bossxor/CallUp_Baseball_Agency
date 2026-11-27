@@ -279,6 +279,18 @@ dd { margin: .26rem 0 0; font-size: clamp(1.4rem, 5.4vw, 1.9rem); font-weight: 8
 .prospects span { color: var(--muted); font-size: .875rem; }
 .contract-note > p, .contract-note > .terms, .contract-note > .actions, .settings-actions { margin-inline: 1rem; }
 .contract-note > .actions, .settings-actions { padding-bottom: 1rem; }
+.negotiation-confirm { margin: 1rem; padding: .85rem 1rem; border: 1px solid var(--line); }
+.negotiation-confirm h3, .negotiation-lines, .player-history, .offer-comparison { list-style: none; padding: 0; }
+.negotiation-lines { margin: 1rem; border-top: 1px solid var(--line); }
+.negotiation-lines li, .player-history li { display: grid; gap: .25rem; padding: .65rem 0; border-bottom: 1px solid var(--line); }
+.negotiation-lines li strong, .player-history small { color: var(--muted); }
+.negotiation-lines li span { overflow-wrap: anywhere; }
+.offer-comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .7rem; }
+.offer-comparison li { border: 1px solid var(--line); padding: .75rem; }
+.offer-comparison h3 { margin: 0; }
+.offer-comparison li > button { margin-top: .75rem; width: 100%; }
+.negotiation-confirm p { margin: 0; }
+.negotiation-confirm p { margin-top: .45rem; color: var(--muted); }
 .diagnostics summary { cursor: pointer; padding: .9rem 1rem; font-weight: 800; }
 .feedback, .save-warning { display: flex; justify-content: space-between; align-items: center; gap: .4rem; margin-bottom: .85rem; padding: .2rem .65rem; background: #c1d2e4; border-left: 3px solid #275990; font-size: .9375rem; line-height: 1.5; }
 .save-warning { background: #ead9d1; border-left-color: var(--red); }
