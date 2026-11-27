@@ -160,6 +160,9 @@ export default function App() {
                 onReset={() => setDialog({ type: 'reset' })} />
             ) : (
               <DeskScreen route={route} agenda={route === 'scout' ? snapshot.reports ?? snapshot.agenda : snapshot.agenda} week={snapshot.week} funds={snapshot.funds}
+                scouting={snapshot.scouting} busy={!!busy}
+                quoteScout={(region, pos) => adapter.quoteScout?.(region, pos)}
+                onDispatch={(region, pos) => void run('action', () => adapter.dispatchScout(region, pos))}
                 onOpen={(entry) => setDialog({ type: 'agenda', item: entry })} />
             )}
           </main>
@@ -194,7 +197,7 @@ export default function App() {
                 <button key={index} disabled={!!busy || choice.lock} className={index === 0 ? 'primary' : 'secondary'} onClick={() => resolve(item, index)}>
                   {choice.label}{choice.hint && <small>{choice.hint}</small>}
                 </button>
-              )) : <button className="primary" disabled={!!busy} onClick={() => resolve(item, 'dismiss')}>확인</button>}
+              )) : <button className="primary" disabled={!!busy} onClick={() => resolve(item, 'dismiss')}>{item.kind === 'scout' ? '검토 완료' : '확인'}</button>}
           </div>
         </Dialog>
       )}

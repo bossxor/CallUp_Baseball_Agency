@@ -7,8 +7,8 @@ sdkInfo:
   minSdkVersion: 32
   targetSdkVersion: 35
 versionInfo:
-  versionCode: 188
-  versionName: 0.1.0-callup.73
+  versionCode: 189
+  versionName: 0.1.0-callup.74
 resourcesInfo:
   packageId: 127
 doNotCompress:

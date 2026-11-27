@@ -108,14 +108,16 @@ test('snapshot uses the engine calendar and age without collapsing week zero', a
   const { mapGameToSnapshot } = await import('../src/adapter/engineBridge.js');
   const snapshot = mapGameToSnapshot({
     week: 0,
-    agency: { clients: { 7: {} }, money: 40 },
+    agency: { clients: { 7: {} }, money: 40, missions: [{ id: 8, filter: { region: 'TW', pos: 'ANY' }, back: 4 }] },
     clubs: [],
     players: { 7: { id: 7, name: '이준', pos: 'C', club: -1, ovr: 63.8, born: 2004 } },
-  }, { mod: { d: () => '2026.07.01', offlineAge: () => 22, offlineMoneyScale: () => 1500 } });
+  }, { mod: { d: (week) => ({ 0: '2026.07.01', 5: '2026.08.05' })[week], offlineAge: () => 22,
+    offlineMoneyScale: () => 1500, c_: () => null, cE: () => ['TW'], cL: () => false } });
   assert.equal(snapshot.dateLabel, '2026.07.01');
   assert.equal(snapshot.week, 0);
   assert.equal(snapshot.clients[0].age, 22);
   assert.equal(snapshot.clients[0].ovr, 64);
+  assert.deepEqual(snapshot.scouting.missions, [{ id: 8, region: 'TW', pos: 'ANY', returnDate: '2026.08.05' }]);
 });
 
 test('default new games open the verified bundled world and keep explicit seeds available', async () => {

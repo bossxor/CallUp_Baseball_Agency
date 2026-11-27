@@ -13,6 +13,8 @@ import {
 } from './diskSave.js';
 import { blobToSaveText, loadStarterWorld, parseSaveBlob, runWeekTick, runWorldGen, serializeWithEngine } from './worldgen.js';
 
+import { SCOUT_MARKETS, SCOUT_POSITIONS } from '../labels.js';
+
 const ENGINE_SAVE_KEY = 'callup-engine-raw-v1';
 const ACTIVE_SLOT = 0;
 const SCOUT_CONTRACT = { years: 2, fee: .05 };
@@ -46,6 +48,10 @@ function clubName(game, player) {
 
 function dateLabel(week, mod) {
   return mod?.d?.(week) ?? new Date(Date.UTC(2026, 6, 1 + week * 7)).toISOString().slice(0, 10).replaceAll('-', '.');
+}
+
+function scoutFilter(region, pos) {
+  return { region, pos, ageMax: 23, tier: 0, grade: 'all', age: 'base' };
 }
 
 function scoutIds(report) {
@@ -113,6 +119,18 @@ export function mapGameToSnapshot(game, extras = {}) {
     funds: (agency.money ?? 0) * scale,
     agenda: entries.filter((item) => !item.done),
     reports: entries.filter((item) => item.kind === 'scout'),
+    scouting: mod?.c_ ? {
+      markets: mod.cE().filter((region) => Object.hasOwn(SCOUT_MARKETS, region)),
+      positionLevel: mod.cK,
+      canPickPosition: mod.cL(agency.fac?.scout ?? 1),
+      missions: (agency.missions ?? []).map((mission) => ({
+        id: mission.id,
+        region: mission.filter?.region,
+        pos: mission.filter?.pos,
+        // The engine delivers during back; the player sees the report on the next date.
+        returnDate: dateLabel(mission.back + 1, mod),
+      })),
+    } : null,
     clients,
     warnedCommon: !!extras.warnedCommon,
     negoOpen: extras.negoOpen || null,
@@ -342,6 +360,21 @@ export function createEngineAdapter() {
       const choice = Number.isInteger(action) ? action : item.def ?? 0;
       notice = resolve(game, item, choice) || '';
       return persist();
+    },
+
+    quoteScout(region, pos) {
+      if (!game || !mod?.c_ || !Object.hasOwn(SCOUT_MARKETS, region) || !mod.cE().includes(region)
+        || !Object.hasOwn(SCOUT_POSITIONS, pos) || (pos !== 'ANY' && !mod.cL(game.agency.fac?.scout ?? 1))) return null;
+      const filter = scoutFilter(region, pos);
+      const scale = mod.offlineMoneyScale?.('KRW') ?? 1500;
+      return { cost: mod.cH(game.agency, filter) * scale, weeks: mod.cY(game.agency, filter) + 1 };
+    },
+
+    async dispatchScout(region, pos) {
+      if (!this.quoteScout(region, pos)) throw new Error('파견 지역과 포지션을 다시 선택하세요.');
+      const reason = mod.c_(game, scoutFilter(region, pos));
+      notice = reason || (SCOUT_MARKETS[region] + '에 스카우트를 보냈습니다.');
+      return reason ? snap() : persist();
     },
 
     async signScoutCandidate(reportId, candidateId) {

@@ -6,6 +6,9 @@ const TIER = {
   legend: '레전드',
 };
 
+export const SCOUT_MARKETS = { KR: '한국', JP: '일본', TW: '대만', US: '미국' };
+export const SCOUT_POSITIONS = { ANY: '전체', P: '투수', C: '포수', '1B': '1루수', '2B': '2루수', '3B': '3루수', SS: '유격수', LF: '좌익수', CF: '중견수', RF: '우익수' };
+
 const KIND = {
   offer: '이적 제안',
   renewal: '연봉·재계약',

@@ -157,6 +157,14 @@ dt { color: var(--muted); font-size: .9375rem; font-weight: 700; }
 dd { margin: .26rem 0 0; font-size: clamp(1.4rem, 5.4vw, 1.9rem); font-weight: 800; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
 
 .register { background: var(--paper); border: 1px solid var(--line); border-top: 3px solid #415a6a; }
+.scout-dispatch { display: grid; gap: .65rem; padding: .85rem 1rem; }
+.scout-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.scout-fields label { display: grid; gap: .3rem; font-weight: 700; }
+.scout-fields select { min-height: var(--target); width: 100%; padding-inline: .5rem; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 3px; font-size: var(--reading); }
+.scout-dispatch small, .scout-missions span { color: var(--muted); }
+.scout-dispatch p { margin: 0; font-weight: 700; }
+.scout-missions { list-style: none; margin: 0; padding: 0; }
+.scout-missions li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem .75rem; padding: .75rem 1rem; border-top: 1px solid var(--line); }
 .register + .register { margin-top: 1.25rem; }
 .register-head { min-height: 3.45rem; display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .75rem 1rem; border-bottom: 1px solid var(--line); }
 .register-head h2 { font-size: 1.19rem; letter-spacing: -.035em; }

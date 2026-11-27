@@ -1,12 +1,52 @@
-import { formatWon, kindLabel } from '../labels.js';
+import { useState } from 'react';
+import { formatWon, kindLabel, SCOUT_MARKETS, SCOUT_POSITIONS } from '../labels.js';
 
 const urgent = new Set(['unique', 'epic', 'legend']);
 
-export default function DeskScreen({ route, agenda, week, funds, onOpen }) {
+function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch }) {
+  const [region, setRegion] = useState(scouting.markets[0]);
+  const [position, setPosition] = useState('ANY');
+  const pos = scouting.canPickPosition ? position : 'ANY';
+  const quote = quoteScout(region, pos);
+  const insufficient = quote && quote.cost > funds;
+
+  return (
+    <section className="register" aria-labelledby="dispatch-title">
+      <header className="register-head">
+        <h2 id="dispatch-title">스카우트 파견</h2>
+        <span>파견 중 {scouting.missions.length}건</span>
+      </header>
+      <form className="scout-dispatch" onSubmit={(event) => {
+        event.preventDefault();
+        if (!busy && quote && !insufficient) onDispatch(region, pos);
+      }}>
+        <div className="scout-fields">
+          <label>지역<select value={region} onChange={(event) => setRegion(event.target.value)}>
+            {scouting.markets.map((market) => <option key={market} value={market}>{SCOUT_MARKETS[market]}</option>)}
+          </select></label>
+          <label>포지션<select value={pos} disabled={!scouting.canPickPosition} onChange={(event) => setPosition(event.target.value)}>
+            {Object.entries(SCOUT_POSITIONS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select></label>
+        </div>
+        {!scouting.canPickPosition && <small>스카우트실 Lv.{scouting.positionLevel}부터 포지션을 지정할 수 있습니다.</small>}
+        {quote && <p>{quote.cost.toLocaleString('ko-KR')}원 · {quote.weeks}주{insufficient && ' · 자금 부족'}</p>}
+        <button className="primary" type="submit" disabled={busy || !quote || insufficient}>파견 보내기</button>
+      </form>
+      {scouting.missions.length > 0 && <ul className="scout-missions" aria-label="파견 중">
+        {scouting.missions.map((mission) => <li key={mission.id}>
+          <strong>{SCOUT_MARKETS[mission.region] ?? mission.region} · {SCOUT_POSITIONS[mission.pos] ?? mission.pos}</strong>
+          <span>{mission.returnDate} 귀환</span>
+        </li>)}
+      </ul>}
+    </section>
+  );
+}
+
+export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch }) {
   const brief = route === 'brief';
-  const scouting = route === 'scout';
-  const rows = agenda.filter((item) => brief || (scouting ? item.kind === 'scout' : item.terms))
-    .sort((a, b) => (a.expires ?? Infinity) - (b.expires ?? Infinity) || Number(urgent.has(b.tier)) - Number(urgent.has(a.tier)));
+  const isScout = route === 'scout';
+  const rows = agenda.filter((item) => brief || (isScout ? item.kind === 'scout' : item.terms))
+    .sort((a, b) => isScout ? Number(b.id) - Number(a.id) : (a.expires ?? Infinity) - (b.expires ?? Infinity) || Number(urgent.has(b.tier)) - Number(urgent.has(a.tier)));
 
   return (
     <>
@@ -21,10 +61,11 @@ export default function DeskScreen({ route, agenda, week, funds, onOpen }) {
             <div><dt>처리 필요</dt><dd>{rows.filter((item) => urgent.has(item.tier)).length}건</dd></div>
           </dl>
         </section>
-      ) : <div className="page-title"><h1>{scouting ? '스카우트' : '계약'}</h1></div>}
-      <section className="register" aria-label={brief ? '처리할 안건' : scouting ? '받은 보고서' : '받은 제안'}>
+      ) : <div className="page-title"><h1>{isScout ? '스카우트' : '계약'}</h1></div>}
+      {isScout && scouting?.markets.length > 0 && <ScoutDispatch scouting={scouting} funds={funds} busy={busy} quoteScout={quoteScout} onDispatch={onDispatch} />}
+      <section className="register" aria-label={brief ? '처리할 안건' : isScout ? '받은 보고서' : '받은 제안'}>
         <header className="register-head">
-          <h2>{brief ? '처리할 안건' : scouting ? '받은 보고서' : '받은 제안'}</h2>
+          <h2>{brief ? '처리할 안건' : isScout ? '받은 보고서' : '받은 제안'}</h2>
           <span>{rows.length}건</span>
         </header>
         {rows.length ? <ul className="records">
@@ -34,14 +75,14 @@ export default function DeskScreen({ route, agenda, week, funds, onOpen }) {
               <span className="record-main"><strong>{item.title}</strong>
                 {item.terms && !brief ? (
                   <span className="offer-line">{[item.terms.club, item.terms.wage != null ? formatWon(item.terms.wage) : null, item.terms.years ? `${item.terms.years}년` : null].filter(Boolean).join(' · ')}</span>
-                ) : scouting && item.candidates?.length ? (
+                ) : isScout && item.candidates?.length ? (
                   <span>{item.candidates.map((candidate) => candidate.name).join(', ')}</span>
                 ) : item.body ? <span>{item.body}</span> : null}
               </span>
               <span className="record-end">{item.expires != null && <small>{item.expires > 0 ? `${item.expires}주 남음` : '마감 임박'}</small>}<b aria-hidden="true">›</b></span>
             </button>
           </li>)}
-        </ul> : <p className="empty">{brief ? '이번 주에 처리할 안건이 없습니다.' : scouting ? '도착한 스카우트 보고서가 없습니다.' : '검토할 계약 제안이 없습니다.'}</p>}
+        </ul> : <p className="empty">{brief ? '이번 주에 처리할 안건이 없습니다.' : isScout ? '도착한 스카우트 보고서가 없습니다.' : '검토할 계약 제안이 없습니다.'}</p>}
       </section>
     </>
   );
