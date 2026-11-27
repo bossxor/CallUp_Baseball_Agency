@@ -35,6 +35,11 @@ patch(engine,marketMarker,[
   ['Jy=(x,e,t)=>Math.min(Wo.faCap,x*e*t*Wo.faK)', 'Jy=(x,e,t)=>Math.min(Wo.faCap,x/52*t)'],
   ['계약금가 부족하다며','계약금이 부족하다며'],
 ]);
+// Story and bonus prospects must respect ordinary scouting conditions.
+patch(engine,"/*CALLUP_SCOUT_REPORT_FILTERS*/",[
+  ['if(t.offlineScout==null&&!l.gemDone&&d.length)', 'const narrow=Kc(r)||ht(r.grade)!=="all";/*CALLUP_SCOUT_REPORT_FILTERS*/if(t.offlineScout==null&&!narrow&&!l.gemDone&&d.length)'],
+  ['const m = YM(x,d), c = i.know;', 'const matchesCup=r.region==="ALL"||(callupMarkets[r.region]?callupMarkets[r.region]===callupMarket(l.nat):r.region===y0[l.nat]?.cont);const m = (guaranteed||!narrow&&matchesCup&&(r.pos==="ANY"||r.pos===l.cupKid?.pos)) ? YM(x,d) : false, c = i.know;'],
+]);
 patch(shell,"/*CALLUP_C4_SCOUT_UI*/",[
   ['[c,l]=p.useState(((ae=Us[a.nat])==null?void 0:ae.cont)??"ALL")',
    '[c,l]=p.useState("KR")/*CALLUP_C4_SCOUT_UI*/'],

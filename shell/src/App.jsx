@@ -166,8 +166,8 @@ export default function App() {
             ) : (
               <DeskScreen route={route} agenda={route === 'scout' ? snapshot.reports ?? snapshot.agenda : snapshot.agenda} week={snapshot.week} funds={snapshot.funds}
                 scouting={snapshot.scouting} busy={!!busy} onFacilities={() => go('settings')}
-                quoteScout={(region, pos) => adapter.quoteScout?.(region, pos)}
-                onDispatch={(region, pos) => void run('action', () => adapter.dispatchScout(region, pos))}
+                quoteScout={(criteria) => adapter.quoteScout?.(criteria)}
+                onDispatch={(criteria) => void run('action', () => adapter.dispatchScout(criteria))}
                 onCompare={(offers) => setDialog({ type: 'compare', offers })}
                 onOpen={(entry) => setDialog({ type: 'agenda', item: entry })} />
             )}

@@ -124,6 +124,17 @@ async function run() {
   assert.equal(loaded.inbox.find(item=>item.id===report.id).sf.region,"TW");
   assert.deepEqual(loaded.inbox.find(item=>item.id===report.id).data,report.data);
 
+  const veteranFilter={region:"TW",pos:"P",ageMax:32,tier:0,grade:"all",age:"vet"};
+  g.agency.gemDone=0;
+  (g.agency.fac??={}).scout=5;
+  engine.V9(g,undefined,{id:g.nextId++,sent:g.week,filter:veteranFilter});
+  const veteranReport=g.inbox.findLast(item=>item.kind==="scout");
+  const veterans=Object.entries(veteranReport.data).filter(([key])=>/^p\d+$/.test(key)).map(([,id])=>g.players[id]);
+  assert.ok(veterans.length,"filtered report contains veteran candidates");
+  assert.ok(veterans.every(p=>p.pos==="P"&&engine.offlineAge(p,g.week)>=27
+    &&engine.offlineAge(p,g.week)<=32&&engine.callupScoutMatch(g,p,"TW")));
+  assert.equal(g.agency.gemDone,0,"veteran search does not consume the youth bonus");
+
   const free=engine.Qe(g,engine.ke(g,"foreign"),engine.ke(g,"foreign-traits"),{club:-1,pos:"P",age:23,nat:"미국",ovr:70});
   sign(free);
   const proposals=["미국","일본","대만"].map(country=>{

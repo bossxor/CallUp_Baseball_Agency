@@ -55,8 +55,15 @@ function moneyLabel(value, scale) {
   return String(value ?? '').replace(/¤(-?\d+)¤/g, (_, amount) => (Number(amount) * scale).toLocaleString('ko-KR') + '원');
 }
 
-function scoutFilter(region, pos) {
-  return { region, pos, ageMax: 23, tier: 0, grade: 'all', age: 'base' };
+function scoutFilter(game, mod, { region, pos, tier = 0, grade = 'all', age = 'base' }) {
+  if (!game || !mod?.c_ || !Object.hasOwn(SCOUT_MARKETS, region) || !mod.cE().includes(region)
+    || !Object.hasOwn(SCOUT_POSITIONS, pos) || !Object.hasOwn(mod.cM, age)) return null;
+  const level = game.agency.fac?.scout ?? 1;
+  const reputation = mod.b1(game.agency);
+  const tierConfig = Number.isSafeInteger(tier) && tier >= 0 ? mod.cX[tier] : null;
+  if (!tierConfig || reputation < tierConfig.rep || (pos !== 'ANY' && !mod.cL(level))
+    || !mod.cN(level, age) || !mod.cR(level, age).includes(grade)) return null;
+  return { region, pos, ageMax: age === 'base' ? 23 : mod.cM[age].hi, tier, grade, age };
 }
 
 function scoutIds(report) {
@@ -133,6 +140,7 @@ export function mapGameToSnapshot(game, extras = {}) {
     .map(describe);
 
   const missions = agency.missions ?? [];
+  const scoutLevel = agency.fac?.scout ?? 1;
   return {
     agencyName: agency.name || '콜업 에이전시',
     dateLabel: dateLabel(week, mod),
@@ -145,7 +153,12 @@ export function mapGameToSnapshot(game, extras = {}) {
     scouting: mod?.c_ ? {
       markets: mod.cE().filter((region) => Object.hasOwn(SCOUT_MARKETS, region)),
       positionLevel: mod.cK,
-      canPickPosition: mod.cL(agency.fac?.scout ?? 1),
+      canPickPosition: mod.cL(scoutLevel),
+      ages: Object.entries(mod.cM).map(([id, band]) => ({ id, label: band.label, locked: !mod.cN(scoutLevel, id) })),
+      grades: Object.fromEntries(Object.keys(mod.cM).map((age) => [age, ['all', 'mid', 'high', 'top'].map((id) => ({
+        id, label: mod.cQ(id, age), locked: !mod.cR(scoutLevel, age).includes(id), required: mod.cS(id, age),
+      }))])),
+      tiers: mod.cX.map((tier, id) => ({ id, label: tier.name, required: tier.rep, locked: mod.b1(agency) < tier.rep })),
       capacity: mod.cF?.(agency),
       occupied: missions.filter((mission) => !mission.ad).length
         + inbox.filter((item) => item?.kind === 'scout' && !item.done && item.data?.held && !item.data.ad && !item.data.gift).length,
@@ -153,6 +166,11 @@ export function mapGameToSnapshot(game, extras = {}) {
         id: mission.id,
         region: mission.filter?.region,
         pos: mission.filter?.pos,
+        details: [
+          mission.filter?.tier > 0 ? mod.cX[mission.filter.tier]?.name : null,
+          mission.filter?.age !== 'base' ? mod.cM[mission.filter?.age]?.label : null,
+          mission.filter?.grade && mission.filter.grade !== 'all' ? mod.cQ(mission.filter.grade, mission.filter.age) : null,
+        ].filter(Boolean).join(' · '),
         // The engine delivers during back; the player sees the report on the next date.
         returnDate: dateLabel(mission.back + 1, mod),
       })),
@@ -406,18 +424,19 @@ export function createEngineAdapter() {
       return persist();
     },
 
-    quoteScout(region, pos) {
-      if (!game || !mod?.c_ || !Object.hasOwn(SCOUT_MARKETS, region) || !mod.cE().includes(region)
-        || !Object.hasOwn(SCOUT_POSITIONS, pos) || (pos !== 'ANY' && !mod.cL(game.agency.fac?.scout ?? 1))) return null;
-      const filter = scoutFilter(region, pos);
+    quoteScout(criteria) {
+      const filter = scoutFilter(game, mod, criteria);
+      if (!filter) return null;
       const scale = mod.offlineMoneyScale?.('KRW') ?? 1500;
-      return { cost: mod.cH(game.agency, filter) * scale, weeks: mod.cY(game.agency, filter) + 1 };
+      const weeks = mod.cY(game.agency, filter) + 1;
+      return { cost: mod.cH(game.agency, filter) * scale, weeks, returnDate: dateLabel(game.week + weeks, mod) };
     },
 
-    async dispatchScout(region, pos) {
-      if (!this.quoteScout(region, pos)) throw new Error('파견 지역과 포지션을 다시 선택하세요.');
-      const reason = mod.c_(game, scoutFilter(region, pos));
-      notice = reason || (SCOUT_MARKETS[region] + '에 스카우트를 보냈습니다.');
+    async dispatchScout(criteria) {
+      const filter = scoutFilter(game, mod, criteria);
+      if (!filter) throw new Error('파견 조건을 다시 선택하세요.');
+      const reason = mod.c_(game, filter);
+      notice = reason || (SCOUT_MARKETS[filter.region] + '에 스카우트를 보냈습니다.');
       return reason ? snap() : persist();
     },
 

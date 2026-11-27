@@ -6,8 +6,12 @@ const urgent = new Set(['unique', 'epic', 'legend']);
 function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch, onFacilities }) {
   const [region, setRegion] = useState(scouting.markets[0]);
   const [position, setPosition] = useState('ANY');
+  const [age, setAge] = useState('base');
+  const [grade, setGrade] = useState('all');
+  const [tier, setTier] = useState(0);
   const pos = scouting.canPickPosition ? position : 'ANY';
-  const quote = quoteScout(region, pos);
+  const criteria = { region, pos, age, grade, tier };
+  const quote = quoteScout(criteria);
   const insufficient = quote && quote.cost > funds;
   const full = scouting.occupied >= scouting.capacity;
 
@@ -19,7 +23,7 @@ function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch, onFacili
       </header>
       <form className="scout-dispatch" onSubmit={(event) => {
         event.preventDefault();
-        if (!busy && quote && !insufficient && !full) onDispatch(region, pos);
+        if (!busy && quote && !insufficient && !full) onDispatch(criteria);
       }}>
         <div className="scout-fields">
           <label>지역<select value={region} onChange={(event) => setRegion(event.target.value)}>
@@ -35,13 +39,39 @@ function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch, onFacili
             <button className="quiet" type="button" onClick={onFacilities}>시설 관리</button>
           </div>
         )}
-        {quote && <p>{exactWon(quote.cost)} · {quote.weeks}주{insufficient && ' · 자금 부족'}</p>}
+        <details className="scout-options">
+          <summary>파견 조건 더 보기</summary>
+          <div className="scout-fields">
+            <label>연령대<select value={age} onChange={(event) => setAge(event.target.value)}>
+              {scouting.ages.map((option) => <option key={option.id} value={option.id} disabled={option.locked}>
+                {option.label}{option.locked ? ' · 스카우트실 Lv.5' : ''}
+              </option>)}
+            </select></label>
+            <label>선수 수준<select value={grade} onChange={(event) => setGrade(event.target.value)}>
+              {scouting.grades[age].map((option) => <option key={option.id} value={option.id} disabled={option.locked}>
+                {option.label}{option.locked ? ' · Lv.' + option.required : ''}
+              </option>)}
+            </select></label>
+            <label>파견 등급<select value={tier} onChange={(event) => setTier(Number(event.target.value))}>
+              {scouting.tiers.map((option) => <option key={option.id} value={option.id} disabled={option.locked}>
+                {option.label}{option.locked ? ' · 평판 Lv.' + option.required : ''}
+              </option>)}
+            </select></label>
+          </div>
+        </details>
+        {quote && <div className="scout-quote" aria-live="polite">
+          <strong>{exactWon(quote.cost)} · {quote.weeks}주</strong>
+          <span>{quote.returnDate} 귀환{insufficient && ' · 자금 부족'}</span>
+        </div>}
         <button className="primary" type="submit" disabled={busy || !quote || insufficient || full}>파견 보내기</button>
         {full && <small>받은 보고서 검토를 마치면 파견 자리가 비워집니다.</small>}
       </form>
       {scouting.missions.length > 0 && <ul className="scout-missions" aria-label="파견 중">
         {scouting.missions.map((mission) => <li key={mission.id}>
-          <strong>{SCOUT_MARKETS[mission.region] ?? mission.region} · {SCOUT_POSITIONS[mission.pos] ?? mission.pos}</strong>
+          <div>
+            <strong>{SCOUT_MARKETS[mission.region] ?? mission.region} · {SCOUT_POSITIONS[mission.pos] ?? mission.pos}</strong>
+            {mission.details && <small>{mission.details}</small>}
+          </div>
           <span>{mission.returnDate} 귀환</span>
         </li>)}
       </ul>}

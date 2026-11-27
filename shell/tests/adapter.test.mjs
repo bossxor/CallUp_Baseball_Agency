@@ -112,12 +112,13 @@ test('snapshot uses the engine calendar and age without collapsing week zero', a
     clubs: [],
     players: { 7: { id: 7, name: '이준', pos: 'C', club: -1, ovr: 63.8, born: 2004 } },
   }, { mod: { d: (week) => ({ 0: '2026.07.01', 5: '2026.08.05' })[week], offlineAge: () => 22,
-    offlineMoneyScale: () => 1500, c_: () => null, cE: () => ['TW'], cL: () => false } });
+    offlineMoneyScale: () => 1500, c_: () => null, cE: () => ['TW'], cL: () => false,
+    cM: { base: { label: '전체' } }, cN: () => true, cR: () => ['all'], cQ: (id) => id, cS: () => 1, cX: [], b1: () => 0 } });
   assert.equal(snapshot.dateLabel, '2026.07.01');
   assert.equal(snapshot.week, 0);
   assert.equal(snapshot.clients[0].age, 22);
   assert.equal(snapshot.clients[0].ovr, 64);
-  assert.deepEqual(snapshot.scouting.missions, [{ id: 8, region: 'TW', pos: 'ANY', returnDate: '2026.08.05' }]);
+  assert.deepEqual(snapshot.scouting.missions, [{ id: 8, region: 'TW', pos: 'ANY', details: '', returnDate: '2026.08.05' }]);
 });
 
 test('default new games open the verified bundled world and keep explicit seeds available', async () => {
