@@ -171,6 +171,9 @@ dd { margin: .26rem 0 0; font-size: clamp(1.4rem, 5.4vw, 1.9rem); font-weight: 8
 .scout-missions { list-style: none; margin: 0; padding: 0; }
 .scout-missions li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem .75rem; padding: .75rem 1rem; border-top: 1px solid var(--line); }
 .scout-lock { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .15rem .5rem; }
+.backup-picker { display: grid; gap: .55rem; font-weight: 700; margin-block: .75rem; }
+.backup-picker input { min-height: var(--target); width: 100%; }
+.backup-picker input::file-selector-button { min-height: var(--target); padding-inline: .75rem; margin-right: .5rem; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; }
 .settings-list { list-style: none; margin: 0; padding: 0; }
 .settings-list li { padding: .8rem 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem .8rem; }
 .settings-list li + li { border-top: 1px solid var(--line); }

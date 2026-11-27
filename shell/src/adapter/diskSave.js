@@ -2,6 +2,9 @@ const HAS_FLAG = 'callup-has-save-v1';
 const pathFor = (slot, suffix = 'bin') => `saves/slot${slot}.${suffix}`;
 const DIRECTORY = 'DATA';
 const CHUNK = 512 * 1024;
+export const BACKUP_FILE_ACCEPT = '.fasave,.bin,.gz,application/gzip,application/octet-stream';
+const MAX_BACKUP = 32 * 1024 * 1024;
+const MAX_WORLD = 192 * 1024 * 1024;
 let loading;
 let offlineDb;
 
@@ -63,6 +66,41 @@ function encode(blob) {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(blob);
   });
+}
+
+export async function downloadBackup(blob) {
+  if (!blob?.size || blob.size > MAX_BACKUP) throw new Error('세이브 파일 크기를 확인하세요.');
+  const bridge = window.SignHereSaveExport;
+  if (typeof bridge?.save === 'function') {
+    const name = bridge.save(await encode(blob));
+    if (!name) throw new Error('휴대폰에 백업 파일을 저장하지 못했습니다.');
+    return 'Download/CallUp/' + name;
+  }
+  const name = 'callup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.fasave';
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  return name;
+}
+
+export async function readBackupText(file) {
+  if (!file?.size || file.size > MAX_BACKUP) throw new Error('32MB 이하의 콜업 백업 파일을 선택하세요.');
+  let bytes = 0;
+  try {
+    const text = file.stream().pipeThrough(new DecompressionStream('gzip')).pipeThrough(new TransformStream({
+      transform(chunk, controller) {
+        bytes += chunk.byteLength;
+        if (bytes > MAX_WORLD) controller.error(new Error('Backup exceeds limit'));
+        else controller.enqueue(chunk);
+      },
+    }));
+    return await new Response(text).text();
+  } catch {
+    throw new Error('콜업 백업 파일을 읽지 못했습니다.');
+  }
 }
 
 function decode(data) {

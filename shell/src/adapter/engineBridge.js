@@ -7,8 +7,10 @@ import {
   CONTINUE_SLOTS,
   clearHasSaveFlag,
   deleteSlot,
+  downloadBackup,
   flagHasSave,
   markHasSave,
+  readBackupText,
   slotCandidates,
   writeSlotBlob,
 } from './diskSave.js';
@@ -315,6 +317,26 @@ export function createEngineAdapter() {
     return snap();
   };
 
+  async function verifyBackupFile(file) {
+    const text = await readBackupText(file);
+    let imported;
+    try { imported = mod.offlineParseSave(text); }
+    catch { throw new Error('콜업에서 만든 백업 파일을 선택하세요.'); }
+    if (!validGame(imported) || !imported.agency.callupBaseball1) throw new Error('콜업에서 만든 백업 파일을 선택하세요.');
+    return imported;
+  }
+
+  async function activateBackup(restored, blob) {
+    if (!await writeSlotBlob(blob, ACTIVE_SLOT)) throw new Error('백업을 불러오지 못했습니다. 현재 진행은 유지됩니다.');
+    clearRawSave();
+    game = restored;
+    table = negoOpen = null;
+    warnedCommon = false;
+    saved = true;
+    notice = '백업을 불러왔습니다.';
+    return snap();
+  }
+
   async function* candidates() {
     yield* slotCandidates();
     const raw = readRawSave();
@@ -400,6 +422,29 @@ export function createEngineAdapter() {
       return snap();
     },
 
+    async exportBackup(slot) {
+      if (!game) return snap();
+      const blob = slot == null ? await packGame()
+        : BACKUP_SLOTS.includes(slot) ? (await slotCandidates([slot]).next()).value?.blob : null;
+      if (!blob) throw new Error('내보낼 백업이 없습니다.');
+      notice = '파일을 저장했습니다. ' + await downloadBackup(blob);
+      return snap();
+    },
+
+    async importBackup(slot, file) {
+      if (!game || !BACKUP_SLOTS.includes(slot)) throw new Error('백업 슬롯을 다시 선택하세요.');
+      const imported = await verifyBackupFile(file);
+      const metadata = { agencyName: imported.agency.name, date: dateLabel(imported.week, mod) };
+      if (!await writeSlotBlob(file, slot, metadata)) throw new Error('가져온 백업을 저장하지 못했습니다.');
+      notice = '파일을 백업 슬롯에 가져왔습니다.';
+      return snap();
+    },
+
+    async continueFromFile(file) {
+      await requireEngine();
+      return activateBackup(await verifyBackupFile(file), file);
+    },
+
     async restoreBackup(slot) {
       if (!game || !BACKUP_SLOTS.includes(slot)) throw new Error('백업 슬롯을 다시 선택하세요.');
       for await (const candidate of slotCandidates([slot])) {
@@ -407,14 +452,7 @@ export function createEngineAdapter() {
         try { restored = await parseCandidate(mod, candidate); }
         catch { continue; }
         if (!validGame(restored) || !candidate.blob) continue;
-        if (!await writeSlotBlob(candidate.blob, ACTIVE_SLOT)) throw new Error('백업을 불러오지 못했습니다. 현재 진행은 유지됩니다.');
-        clearRawSave();
-        game = restored;
-        table = negoOpen = null;
-        warnedCommon = false;
-        saved = true;
-        notice = '백업을 불러왔습니다.';
-        return snap();
+        return activateBackup(restored, candidate.blob);
       }
       throw new Error('이 슬롯에서 읽을 수 있는 백업을 찾지 못했습니다.');
     },

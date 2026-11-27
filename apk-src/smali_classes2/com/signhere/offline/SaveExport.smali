@@ -103,7 +103,7 @@
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
 
-    const-string v3, "signhere-"
+    const-string v3, "callup-"
 
     invoke-virtual {v0, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -155,7 +155,7 @@
 
     move-result-object v4
 
-    const-string v5, "/SignHere"
+    const-string v5, "/CallUp"
 
     invoke-virtual {v4, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 

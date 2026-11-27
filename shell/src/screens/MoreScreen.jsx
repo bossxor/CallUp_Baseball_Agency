@@ -1,6 +1,6 @@
 import { exactWon } from '../labels.js';
 
-export default function MoreScreen({ busy, saved, onSave, onCheat, onReset, facilities, ledger, funds, onUpgrade, onBackups }) {
+export default function MoreScreen({ busy, saved, onSave, onCheat, onReset, facilities, ledger, funds, onUpgrade, onBackups, onExport }) {
   return (
     <>
       <div className="page-title"><h1>설정</h1></div>
@@ -8,6 +8,7 @@ export default function MoreScreen({ busy, saved, onSave, onCheat, onReset, faci
         <header className="register-head"><h2>저장</h2><span>{saved ? '저장됨' : '저장 확인 필요'}</span></header>
         <div className="settings-actions">
           <button className="secondary" disabled={!!busy} onClick={onSave}>{busy === 'save' ? '저장 중…' : '지금 저장'}</button>
+          {onExport && <button className="secondary" disabled={!!busy} onClick={onExport}>현재 진행 내보내기</button>}
           {onBackups && <button className="secondary" disabled={!!busy} onClick={onBackups}>백업 슬롯</button>}
           <button className="danger" disabled={!!busy} onClick={onReset}>저장 데이터 초기화</button>
         </div>

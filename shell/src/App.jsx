@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { BACKUP_FILE_ACCEPT } from './adapter/diskSave.js';
 import { createAdapter } from './adapter/index.js';
 import TitleScreen from './screens/TitleScreen.jsx';
 import DeskScreen from './screens/DeskScreen.jsx';
@@ -128,7 +129,11 @@ export default function App() {
   const openBackups = () => void run('action', async () => {
     setDialog({ type: 'backups', slots: await adapter.listBackups() });
   });
-  function applyBackup(slot, mode) {
+  const exportBackup = (slot) => void run('action', async () => {
+    closeDialog();
+    return adapter.exportBackup(slot);
+  });
+  function applyBackup(slot, mode, file) {
     closeDialog();
     void run('action', async () => {
       if (mode === 'load') {
@@ -136,7 +141,7 @@ export default function App() {
         setRoute('brief');
         return next;
       }
-      const next = await adapter.saveBackup(slot.slot);
+      const next = mode === 'import' ? await adapter.importBackup(slot.slot, file) : await adapter.saveBackup(slot.slot);
       setDialog({ type: 'backups', slots: await adapter.listBackups() });
       return next;
     });
@@ -149,7 +154,8 @@ export default function App() {
     <div className="app" aria-busy={!!busy || !ready}>
       {!snapshot ? (
         <TitleScreen ready={ready} hasSave={hasSave} busy={busy} progress={progress}
-          message={message} onContinue={() => enter('load')} onNew={askNew} />
+          message={message} onContinue={() => enter('load')} onNew={askNew}
+          onBackupFile={adapter.continueFromFile && ((file) => setDialog({ type: 'file-start', file }))} />
       ) : (
         <>
           <header className="workspace-head">
@@ -185,6 +191,7 @@ export default function App() {
                 onUpgrade={(facility) => setDialog({ type: 'upgrade', facility })}
                 onCheat={(cmd) => void run('action', () => adapter.cheat(cmd))}
                 onBackups={adapter.listBackups && openBackups}
+                onExport={adapter.exportBackup && (() => exportBackup())}
                 onReset={() => setDialog({ type: 'reset' })} />
             ) : (
               <DeskScreen route={route} agenda={route === 'scout' ? snapshot.reports ?? snapshot.agenda : snapshot.agenda} week={snapshot.week} funds={snapshot.funds}
@@ -294,8 +301,29 @@ export default function App() {
           </form>
         </Dialog>
       )}
+      {dialog?.type === 'file-start' && (
+        <Dialog title="백업 파일로 시작할까요?" onClose={closeDialog}>
+          <p>{dialog.file.name}</p>
+          {hasSave && <p>백업 파일이 현재 이어하기 데이터를 교체합니다.</p>}
+          <div className="actions">
+            <button className="primary" disabled={!!busy} onClick={() => {
+              const file = dialog.file;
+              closeDialog();
+              setRoute('brief');
+              void run('load', () => adapter.continueFromFile(file));
+            }}>파일 불러오기</button>
+          </div>
+        </Dialog>
+      )}
       {dialog?.type === 'backups' && (
         <Dialog title="백업 저장과 불러오기" onClose={closeDialog}>
+          <label className="backup-picker">백업 파일 가져오기
+            <input type="file" aria-label="백업 파일 가져오기" accept={BACKUP_FILE_ACCEPT} disabled={!!busy}
+              onChange={(event) => {
+                const file = event.currentTarget.files[0];
+                if (file) setDialog({ type: 'backup-target', file, slots: dialog.slots });
+              }} />
+          </label>
           <ul className="settings-list">
             {dialog.slots.map((slot) => <li key={slot.slot}>
               <div><strong>슬롯 {slot.number}</strong>
@@ -308,17 +336,31 @@ export default function App() {
                 }}>저장</button>
                 <button className="secondary" disabled={!!busy || !slot.exists} aria-label={'슬롯 ' + slot.number + ' 불러오기'}
                   onClick={() => setDialog({ type: 'backup-confirm', slot, mode: 'load' })}>불러오기</button>
+                <button className="secondary" disabled={!!busy || !slot.exists} aria-label={'슬롯 ' + slot.number + ' 파일로 내보내기'}
+                  onClick={() => exportBackup(slot.slot)}>내보내기</button>
               </div>
             </li>)}
           </ul>
         </Dialog>
       )}
+      {dialog?.type === 'backup-target' && (
+        <Dialog title="가져올 슬롯 선택" onClose={closeDialog}>
+          <p>{dialog.file.name}</p>
+          <ul className="settings-list">{dialog.slots.map((slot) => <li key={slot.slot}>
+            <strong>슬롯 {slot.number}</strong>
+            <button className="secondary" disabled={!!busy} aria-label={(slot.exists ? '덮어쓰기' : '가져오기') + ' · 슬롯 ' + slot.number} onClick={() => {
+              if (slot.exists) setDialog({ type: 'backup-confirm', mode: 'import', slot, file: dialog.file });
+              else applyBackup(slot, 'import', dialog.file);
+            }}>{slot.exists ? '덮어쓰기' : '여기에 가져오기'}</button>
+          </li>)}</ul>
+        </Dialog>
+      )}
       {dialog?.type === 'backup-confirm' && (
         <Dialog title={dialog.mode === 'load' ? '백업을 불러올까요?' : '이 슬롯에 덮어쓸까요?'} onClose={closeDialog}>
-          <p>{dialog.mode === 'load' ? '선택한 백업이 현재 이어하기 데이터를 교체합니다.' : '이 슬롯의 백업을 현재 진행으로 교체합니다.'}</p>
+          <p>{dialog.mode === 'load' ? '선택한 백업이 현재 이어하기 데이터를 교체합니다.' : (dialog.mode === 'import' ? '선택한 파일로 이 슬롯의 백업을 교체합니다.' : '이 슬롯의 백업을 현재 진행으로 교체합니다.')}</p>
           <div className="actions">
             <button className="secondary" disabled={!!busy} onClick={openBackups}>슬롯 목록</button>
-            <button className="primary" disabled={!!busy} onClick={() => applyBackup(dialog.slot, dialog.mode)}>
+            <button className="primary" disabled={!!busy} onClick={() => applyBackup(dialog.slot, dialog.mode, dialog.file)}>
               {dialog.mode === 'load' ? '백업 불러오기' : '덮어쓰기'}
             </button>
           </div>
