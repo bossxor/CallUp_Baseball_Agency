@@ -6,7 +6,7 @@ import RosterScreen from './screens/RosterScreen.jsx';
 import MoreScreen from './screens/MoreScreen.jsx';
 import NegoScreen from './screens/NegoScreen.jsx';
 import WorkspaceNav from './components/BottomNav.jsx';
-import { formatWon, kindLabel } from './labels.js';
+import { exactWon, formatWon, kindLabel } from './labels.js';
 
 const adapter = createAdapter();
 
@@ -156,11 +156,13 @@ export default function App() {
               <RosterScreen clients={snapshot.clients} onOpen={(player) => setDialog({ type: 'player', player })} />
             ) : route === 'settings' ? (
               <MoreScreen busy={busy} saved={snapshot.saved} onSave={refreshSave}
+                facilities={snapshot.facilities} ledger={snapshot.ledger} funds={snapshot.funds}
+                onUpgrade={(facility) => setDialog({ type: 'upgrade', facility })}
                 onCheat={(cmd) => void run('action', () => adapter.cheat(cmd))}
                 onReset={() => setDialog({ type: 'reset' })} />
             ) : (
               <DeskScreen route={route} agenda={route === 'scout' ? snapshot.reports ?? snapshot.agenda : snapshot.agenda} week={snapshot.week} funds={snapshot.funds}
-                scouting={snapshot.scouting} busy={!!busy}
+                scouting={snapshot.scouting} busy={!!busy} onFacilities={() => go('settings')}
                 quoteScout={(region, pos) => adapter.quoteScout?.(region, pos)}
                 onDispatch={(region, pos) => void run('action', () => adapter.dispatchScout(region, pos))}
                 onOpen={(entry) => setDialog({ type: 'agenda', item: entry })} />
@@ -243,6 +245,18 @@ export default function App() {
             {hasSave && <p>새 게임 저장에 성공하면 현재 이어하기 슬롯을 교체합니다.</p>}
             <div className="actions"><button className="primary" type="submit">새 게임 시작</button></div>
           </form>
+        </Dialog>
+      )}
+      {dialog?.type === 'upgrade' && (
+        <Dialog title={dialog.facility.name + ' Lv.' + dialog.facility.next} onClose={closeDialog}>
+          <p>운영 자금에서 {exactWon(dialog.facility.cost)}을 사용합니다.</p>
+          <div className="actions">
+            <button className="primary" disabled={!!busy} onClick={() => {
+              const id = dialog.facility.id;
+              closeDialog();
+              void run('action', () => adapter.upgradeFacility(id));
+            }}>업그레이드 확정</button>
+          </div>
         </Dialog>
       )}
       {dialog?.type === 'reset' && (

@@ -24,6 +24,10 @@ export function kindLabel(k) {
   return KIND[k] || k || '안건';
 }
 
+export function exactWon(value) {
+  return value.toLocaleString('ko-KR') + '원';
+}
+
 export function formatWon(value) {
   if (!Number.isFinite(value)) return '—';
   if (Math.abs(value) >= 100_000_000) return `${(value / 100_000_000).toLocaleString('ko-KR', { maximumFractionDigits: 2 })}억 원`;

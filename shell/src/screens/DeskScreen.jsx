@@ -1,24 +1,25 @@
 import { useState } from 'react';
-import { formatWon, kindLabel, SCOUT_MARKETS, SCOUT_POSITIONS } from '../labels.js';
+import { exactWon, formatWon, kindLabel, SCOUT_MARKETS, SCOUT_POSITIONS } from '../labels.js';
 
 const urgent = new Set(['unique', 'epic', 'legend']);
 
-function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch }) {
+function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch, onFacilities }) {
   const [region, setRegion] = useState(scouting.markets[0]);
   const [position, setPosition] = useState('ANY');
   const pos = scouting.canPickPosition ? position : 'ANY';
   const quote = quoteScout(region, pos);
   const insufficient = quote && quote.cost > funds;
+  const full = scouting.occupied >= scouting.capacity;
 
   return (
     <section className="register" aria-labelledby="dispatch-title">
       <header className="register-head">
         <h2 id="dispatch-title">스카우트 파견</h2>
-        <span>파견 중 {scouting.missions.length}건</span>
+        <span>사용 중 {scouting.occupied}/{scouting.capacity}팀</span>
       </header>
       <form className="scout-dispatch" onSubmit={(event) => {
         event.preventDefault();
-        if (!busy && quote && !insufficient) onDispatch(region, pos);
+        if (!busy && quote && !insufficient && !full) onDispatch(region, pos);
       }}>
         <div className="scout-fields">
           <label>지역<select value={region} onChange={(event) => setRegion(event.target.value)}>
@@ -28,9 +29,15 @@ function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch }) {
             {Object.entries(SCOUT_POSITIONS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select></label>
         </div>
-        {!scouting.canPickPosition && <small>스카우트실 Lv.{scouting.positionLevel}부터 포지션을 지정할 수 있습니다.</small>}
-        {quote && <p>{quote.cost.toLocaleString('ko-KR')}원 · {quote.weeks}주{insufficient && ' · 자금 부족'}</p>}
-        <button className="primary" type="submit" disabled={busy || !quote || insufficient}>파견 보내기</button>
+        {!scouting.canPickPosition && (
+          <div className="scout-lock">
+            <small>Lv.{scouting.positionLevel}부터 포지션 지정</small>
+            <button className="quiet" type="button" onClick={onFacilities}>시설 관리</button>
+          </div>
+        )}
+        {quote && <p>{exactWon(quote.cost)} · {quote.weeks}주{insufficient && ' · 자금 부족'}</p>}
+        <button className="primary" type="submit" disabled={busy || !quote || insufficient || full}>파견 보내기</button>
+        {full && <small>받은 보고서 검토를 마치면 파견 자리가 비워집니다.</small>}
       </form>
       {scouting.missions.length > 0 && <ul className="scout-missions" aria-label="파견 중">
         {scouting.missions.map((mission) => <li key={mission.id}>
@@ -42,7 +49,7 @@ function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch }) {
   );
 }
 
-export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch }) {
+export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch, onFacilities }) {
   const brief = route === 'brief';
   const isScout = route === 'scout';
   const rows = agenda.filter((item) => brief || (isScout ? item.kind === 'scout' : item.terms))
@@ -62,7 +69,7 @@ export default function DeskScreen({ route, agenda, week, funds, onOpen, scoutin
           </dl>
         </section>
       ) : <div className="page-title"><h1>{isScout ? '스카우트' : '계약'}</h1></div>}
-      {isScout && scouting?.markets.length > 0 && <ScoutDispatch scouting={scouting} funds={funds} busy={busy} quoteScout={quoteScout} onDispatch={onDispatch} />}
+      {isScout && scouting?.markets.length > 0 && <ScoutDispatch scouting={scouting} funds={funds} busy={busy} quoteScout={quoteScout} onDispatch={onDispatch} onFacilities={onFacilities} />}
       <section className="register" aria-label={brief ? '처리할 안건' : isScout ? '받은 보고서' : '받은 제안'}>
         <header className="register-head">
           <h2>{brief ? '처리할 안건' : isScout ? '받은 보고서' : '받은 제안'}</h2>

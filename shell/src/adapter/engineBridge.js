@@ -15,6 +15,7 @@ import { blobToSaveText, loadStarterWorld, parseSaveBlob, runWeekTick, runWorldG
 
 import { SCOUT_MARKETS, SCOUT_POSITIONS } from '../labels.js';
 
+const FACILITIES = ['scout', 'admin', 'medical', 'training'];
 const ENGINE_SAVE_KEY = 'callup-engine-raw-v1';
 const ACTIVE_SLOT = 0;
 const SCOUT_CONTRACT = { years: 2, fee: .05 };
@@ -56,6 +57,21 @@ function scoutFilter(region, pos) {
 
 function scoutIds(report) {
   return Object.entries(report.data ?? {}).filter(([key]) => /^p\d+$/.test(key)).map(([, id]) => id);
+}
+
+function upgrades(game, mod, scale) {
+  if (!mod?.ex) return [];
+  const reputation = mod.b1(game.agency);
+  return FACILITIES.map((id) => {
+    const level = mod.ad(game, id);
+    const facility = mod.bY[id];
+    const next = level < mod.e7 ? level + 1 : null;
+    return {
+      id, level, name: facility.name, description: facility.desc(level),
+      next, requiredRep: next ? mod.el(next) : null, reputation,
+      cost: next ? mod.e6(game, id, next) * scale : null,
+    };
+  });
 }
 
 export function mapGameToSnapshot(game, extras = {}) {
@@ -110,6 +126,7 @@ export function mapGameToSnapshot(game, extras = {}) {
     .filter((p) => p && !p.retired)
     .map(describe);
 
+  const missions = agency.missions ?? [];
   return {
     agencyName: agency.name || '콜업 에이전시',
     dateLabel: dateLabel(week, mod),
@@ -123,7 +140,10 @@ export function mapGameToSnapshot(game, extras = {}) {
       markets: mod.cE().filter((region) => Object.hasOwn(SCOUT_MARKETS, region)),
       positionLevel: mod.cK,
       canPickPosition: mod.cL(agency.fac?.scout ?? 1),
-      missions: (agency.missions ?? []).map((mission) => ({
+      capacity: mod.cF?.(agency),
+      occupied: missions.filter((mission) => !mission.ad).length
+        + inbox.filter((item) => item?.kind === 'scout' && !item.done && item.data?.held && !item.data.ad && !item.data.gift).length,
+      missions: missions.map((mission) => ({
         id: mission.id,
         region: mission.filter?.region,
         pos: mission.filter?.pos,
@@ -131,6 +151,10 @@ export function mapGameToSnapshot(game, extras = {}) {
         returnDate: dateLabel(mission.back + 1, mod),
       })),
     } : null,
+    facilities: upgrades(game, mod, scale),
+    ledger: (agency.ledger ?? []).slice(-12).reverse().map(({ w, text, amt }) => ({
+      date: dateLabel(w, mod), label: moneyText(text), amount: amt * scale,
+    })),
     clients,
     warnedCommon: !!extras.warnedCommon,
     negoOpen: extras.negoOpen || null,
@@ -374,6 +398,13 @@ export function createEngineAdapter() {
       if (!this.quoteScout(region, pos)) throw new Error('파견 지역과 포지션을 다시 선택하세요.');
       const reason = mod.c_(game, scoutFilter(region, pos));
       notice = reason || (SCOUT_MARKETS[region] + '에 스카우트를 보냈습니다.');
+      return reason ? snap() : persist();
+    },
+
+    async upgradeFacility(id) {
+      if (!game || !mod?.ex || !FACILITIES.includes(id)) throw new Error('시설을 다시 선택하세요.');
+      const reason = mod.ex(game, id);
+      notice = reason || (mod.bY[id].name + ' Lv.' + mod.ad(game, id) + ' 업그레이드 완료');
       return reason ? snap() : persist();
     },
 
