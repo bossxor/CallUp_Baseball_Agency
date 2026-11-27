@@ -3,7 +3,6 @@ export default function TitleScreen({ ready, hasSave, busy, progress, message, o
   return (
     <main className="entry">
       <div className="entry-brand">
-        <div className="field-lines" aria-hidden="true"><i /><i /><i /><i /></div>
         <div className="entry-title"><h1>콜업<span aria-hidden="true" /></h1><p>야구 에이전시</p></div>
       </div>
       <div className="entry-actions">

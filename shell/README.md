@@ -21,7 +21,7 @@ npm run build
 
 ## APK
 
-저장소 루트에서 `pwsh -File tools/build-callup.ps1 -VersionCode 183 -VersionName 0.1.0-callup.68 -SkipPatch`를 실행한다. 셸 빌드와 주입 후 기존 엔진을 포함한 APK를 만든다.
+저장소 루트에서 `pwsh -File tools/build-callup.ps1 -SkipPatch`를 실행한다. 셸 빌드와 주입 후 기존 엔진을 포함한 APK를 만든다.
 
 ## Adapter
 

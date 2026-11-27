@@ -1,8 +1,8 @@
 ﻿param(
     [string]$SourceDir = (Join-Path $PSScriptRoot '..\apk-src'),
     [string]$OutputApk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
-    [int]$VersionCode = 183,
-    [string]$VersionName = '0.1.0-callup.68',
+    [int]$VersionCode = 184,
+    [string]$VersionName = '0.1.0-callup.69',
     [switch]$SkipPatch,
     [switch]$SkipShell
 )

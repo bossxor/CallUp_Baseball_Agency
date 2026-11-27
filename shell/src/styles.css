@@ -48,6 +48,11 @@ button { border: 0; }
   display: grid;
   align-items: end;
   padding: max(2rem, env(safe-area-inset-top)) max(var(--gutter), calc((100% - var(--frame)) / 2)) clamp(2.75rem, 10vh, 6rem);
+  background:
+    linear-gradient(180deg, #17263118 22%, #14222b50 54%, #17252ef5 99%),
+    linear-gradient(90deg, #17252e60, #17252e00 75%),
+    url('./media/dugout-dusk.jpg') center 48% / cover no-repeat,
+    var(--navy);
 }
 .entry-title { position: relative; animation: enter 300ms ease-out both; }
 .entry-title h1 {
@@ -67,25 +72,11 @@ button { border: 0; }
   height: .14em;
   transform: skew(-12deg);
 }
-.entry-title p { margin-top: .75rem; color: #c6d3dc; font-size: 1.18rem; font-weight: 600; }
-.field-lines {
-  position: absolute;
-  z-index: -1;
-  inset: auto -14% -16% auto;
-  width: clamp(20rem, 72vw, 53rem);
-  aspect-ratio: 1;
-  transform: rotate(-45deg);
-  border: 1px solid #617789;
-  opacity: .64;
-}
-.field-lines i { position: absolute; inset: 12%; border: 1px solid #617789; }
-.field-lines i:nth-child(2) { inset: 24%; }
-.field-lines i:nth-child(3) { inset: 36%; }
-.field-lines i:nth-child(4) { inset: 48%; background: #8eb6f1; border: 0; }
+.entry-title p { margin-top: .75rem; color: #dae2ea; font-size: 1.18rem; font-weight: 600; }
 .entry-actions {
   min-height: clamp(9rem, 24dvh, 16rem);
-  background: var(--slate);
-  border-top: 1px solid #536c81;
+  background: #233440;
+  border-top: 1px solid #4b6579;
   display: grid;
   align-content: center;
   gap: .6rem;
@@ -135,17 +126,30 @@ progress { width: 100%; height: .4rem; accent-color: #a6c8ff; }
 .page-title { display: flex; justify-content: space-between; align-items: baseline; gap: .7rem; margin-bottom: 1.35rem; }
 .page-title h1 { font-size: clamp(2rem, 9vw, 3.5rem); letter-spacing: -.076em; line-height: 1.14; }
 .page-title > span { color: var(--muted); font-size: .9rem; font-weight: 700; }
-.page-title .week-number { color: #354e60; white-space: nowrap; font-size: clamp(1.55rem, 6.5vw, 2.3rem); font-weight: 800; font-variant-numeric: tabular-nums; }
+.week-number { color: #c9def8; white-space: nowrap; font-size: clamp(1.55rem, 6.5vw, 2.3rem); font-weight: 800; font-variant-numeric: tabular-nums; }
 .week-number small { margin-left: .18rem; font-size: .77rem; }
+.brief-cover {
+  color: #f0f5f8;
+  margin-bottom: clamp(1.5rem, 6vw, 2.75rem);
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid #314b5e;
+  background:
+    linear-gradient(100deg, #162937f2 4%, #1a2d3d83 55%, #14283843),
+    url('./media/stadium-blue-hour.jpg') 60% 54% / cover no-repeat,
+    #243848;
+}
+.brief-heading { min-height: 6.5rem; display: flex; justify-content: space-between; align-items: end; gap: .6rem; padding: .95rem 1rem .7rem; }
+.brief-heading h1 { color: inherit; font-size: clamp(1.65rem, 7.5vw, 2.7rem); letter-spacing: -.07em; }
 .brief-stats {
   display: grid;
   grid-template-columns: 1.48fr 1fr;
-  background: #bac8cf;
-  border-block: 1px solid #9eafb8;
-  margin-bottom: clamp(1.5rem, 6vw, 2.75rem);
+  border-top: 1px solid #c3d8f453;
+  background: #1a2c3be8;
 }
-.brief-stats > div { padding: .82rem clamp(.82rem, 4vw, 1.3rem) .95rem; min-width: 0; }
-.brief-stats > div + div { border-left: 1px solid #9eafb8; }
+.brief-stats > div { padding: .65rem 1rem .75rem; min-width: 0; }
+.brief-stats > div + div { border-left: 1px solid #b4c8dc4d; }
+.brief-stats dt { color: #c5d4e1; }
 dt { color: var(--muted); font-size: .81rem; font-weight: 700; }
 dd { margin: .26rem 0 0; font-size: clamp(1.16rem, 4.8vw, 1.65rem); font-weight: 800; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
 
@@ -172,6 +176,8 @@ dd { margin: .26rem 0 0; font-size: clamp(1.16rem, 4.8vw, 1.65rem); font-weight:
 .record:focus-visible { outline-offset: -4px; }
 .record-type { display: flex; align-items: center; gap: .24rem; color: var(--muted); font-size: .73rem; font-weight: 800; }
 .record-type i { flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: #8b423d; }
+.record[data-kind="offer"] .record-type, .record[data-kind="renewal"] .record-type { color: #7d433d; }
+.record[data-kind="scout"] .record-type { color: #18596a; }
 .record-main { display: grid; gap: .2rem; min-width: 0; }
 .record-main strong { font-size: .98rem; line-height: 1.4; overflow-wrap: anywhere; }
 .record-main > span { color: var(--muted); font-size: .81rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

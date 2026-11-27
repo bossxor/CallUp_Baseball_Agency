@@ -10,14 +10,18 @@ export default function DeskScreen({ route, agenda, week, funds, onOpen }) {
 
   return (
     <>
-      <div className="page-title">
-        <h1>{brief ? '주간 브리핑' : scouting ? '스카우트' : '계약'}</h1>
-        {brief && <span className="week-number">{String(week + 1).padStart(2, '0')}<small>주차</small></span>}
-      </div>
-      {brief && <dl className="brief-stats">
-        <div><dt>운영 자금</dt><dd>{formatWon(funds)}</dd></div>
-        <div><dt>처리 필요</dt><dd>{rows.filter((item) => urgent.has(item.tier)).length}건</dd></div>
-      </dl>}
+      {brief ? (
+        <section className="brief-cover" aria-labelledby="brief-title">
+          <div className="brief-heading">
+            <h1 id="brief-title">주간 브리핑</h1>
+            <span className="week-number">{String(week + 1).padStart(2, '0')}<small>주차</small></span>
+          </div>
+          <dl className="brief-stats">
+            <div><dt>운영 자금</dt><dd>{formatWon(funds)}</dd></div>
+            <div><dt>처리 필요</dt><dd>{rows.filter((item) => urgent.has(item.tier)).length}건</dd></div>
+          </dl>
+        </section>
+      ) : <div className="page-title"><h1>{scouting ? '스카우트' : '계약'}</h1></div>}
       <section className="register" aria-label={brief ? '처리할 안건' : scouting ? '받은 보고서' : '받은 제안'}>
         <header className="register-head">
           <h2>{brief ? '처리할 안건' : scouting ? '받은 보고서' : '받은 제안'}</h2>
@@ -25,7 +29,7 @@ export default function DeskScreen({ route, agenda, week, funds, onOpen }) {
         </header>
         {rows.length ? <ul className="records">
           {rows.map((item) => <li key={item.id}>
-            <button className="record" onClick={() => onOpen(item)}>
+            <button className="record" data-kind={item.kind} onClick={() => onOpen(item)}>
               <span className="record-type">{urgent.has(item.tier) && <i aria-label="중요" />}{kindLabel(item.kind)}</span>
               <span className="record-main"><strong>{item.title}</strong>
                 {item.terms && !brief ? (
