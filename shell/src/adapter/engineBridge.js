@@ -156,6 +156,9 @@ export function mapGameToSnapshot(game, extras = {}) {
     funds: (agency.money ?? 0) * scale,
     agenda: entries.filter((item) => !item.done),
     reports: entries.filter((item) => item.kind === 'scout'),
+    shortlist: (agency.cart ?? []).map((id) => game.players?.[id])
+      .filter((player) => player && !player.retired && !agency.clients?.[player.id])
+      .map(describeCandidate),
     scouting: mod?.c_ ? {
       markets: mod.cE().filter((region) => Object.hasOwn(SCOUT_MARKETS, region)),
       positionLevel: mod.cK,
@@ -571,14 +574,31 @@ export function createEngineAdapter() {
       return reason ? snap() : persist();
     },
 
+    async toggleScoutCandidate(reportId, candidateId) {
+      const player = game?.players?.[candidateId];
+      if (!player || player.retired || game.agency.clients[candidateId]) throw new Error('저장할 수 없는 후보입니다.');
+      const cart = game.agency.cart ??= [];
+      const marked = cart.includes(candidateId);
+      const report = game.inbox.find((item) => String(item.id) === String(reportId) && item.kind === 'scout');
+      if (!marked && (!report || !scoutIds(report).includes(candidateId))) throw new Error('이 후보의 보고서를 찾지 못했습니다.');
+      mod.a8(game, candidateId);
+      notice = marked ? '관심 후보에서 제외했습니다.' : '관심 후보에 추가했습니다.';
+      return persist();
+    },
+
     async signScoutCandidate(reportId, candidateId) {
       const report = game?.inbox?.find((item) => String(item.id) === String(reportId) && item.kind === 'scout');
-      if (!report || !scoutIds(report).includes(candidateId) || !game.players?.[candidateId] || !mod?.w) {
+      const known = report ? scoutIds(report).includes(candidateId) : reportId == null && game?.agency.cart?.includes(candidateId);
+      if (!known || !game.players?.[candidateId] || !mod?.w) {
         throw new Error('이 보고서에서 선수에게 계약을 제안할 수 없습니다.');
       }
       const result = mod.w(game, candidateId, SCOUT_CONTRACT);
-      if (result.ok && scoutIds(report).every((id) => game.agency.clients[id] || game.players[id]?.retired)) {
-        report.done = true;
+      if (result.ok) {
+        for (const item of game.inbox) {
+          if (item.kind !== 'scout' || item.done) continue;
+          const ids = scoutIds(item);
+          if (ids.includes(candidateId) && ids.every((id) => game.agency.clients[id] || game.players[id]?.retired)) item.done = true;
+        }
       }
       notice = result.text;
       return persist();

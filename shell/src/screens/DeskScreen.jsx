@@ -79,7 +79,7 @@ function ScoutDispatch({ scouting, funds, busy, quoteScout, onDispatch, onFacili
   );
 }
 
-export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch, onFacilities, onCompare, onLeagues }) {
+export default function DeskScreen({ route, agenda, week, funds, onOpen, scouting, busy, quoteScout, onDispatch, onFacilities, onCompare, onLeagues, shortlist, onCandidate }) {
   const brief = route === 'brief';
   const isScout = route === 'scout';
   const rows = agenda.filter((item) => brief || (isScout ? item.kind === 'scout' : item.terms))
@@ -111,6 +111,18 @@ export default function DeskScreen({ route, agenda, week, funds, onOpen, scoutin
       ) : <div className="page-title"><h1>{isScout ? '스카우트' : '계약'}</h1></div>}
       {brief && onLeagues && <div className="brief-links"><button className="secondary" onClick={onLeagues}>리그 순위</button></div>}
       {isScout && scouting?.markets.length > 0 && <ScoutDispatch scouting={scouting} funds={funds} busy={busy} quoteScout={quoteScout} onDispatch={onDispatch} onFacilities={onFacilities} />}
+      {isScout && shortlist?.length > 0 && <section className="register" aria-label="관심 후보">
+        <header className="register-head"><h2>관심 후보</h2><span>{shortlist.length}명</span></header>
+        <ul className="records">
+          {shortlist.map((player) => <li key={player.id}>
+            <button className="record player-record" onClick={() => onCandidate(player)}>
+              <span className="position">{player.pos}</span>
+              <span className="record-main"><strong>{player.name}</strong><span>{player.club} · {player.age}세</span></span>
+              <span className="player-strength"><small>OVR</small><b>{player.ovr}</b></span>
+            </button>
+          </li>)}
+        </ul>
+      </section>}
       {comparisons.length > 0 && <section className="register offer-compare">
         <header className="register-head"><h2>구단별 조건 비교</h2></header>
         <ul className="settings-list">{comparisons.map((offers) => (

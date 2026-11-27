@@ -104,7 +104,7 @@ export default function App() {
 
   async function signCandidate(report, player) {
     closeDialog();
-    const next = await run('action', () => adapter.signScoutCandidate(report.id, player.id));
+    const next = await run('action', () => adapter.signScoutCandidate(report?.id, player.id));
     if (next?.clients.some((client) => client.id === player.id)) setRoute('roster');
   }
 
@@ -126,6 +126,7 @@ export default function App() {
   };
   const refreshSave = () => void run('save', () => adapter.saveGame?.());
   const item = dialog?.item;
+  const shortlisted = snapshot?.shortlist?.some((player) => player.id === dialog?.player?.id);
   const openBackups = () => void run('action', async () => {
     setDialog({ type: 'backups', slots: await adapter.listBackups() });
   });
@@ -196,6 +197,7 @@ export default function App() {
             ) : (
               <DeskScreen route={route} agenda={route === 'scout' ? snapshot.reports ?? snapshot.agenda : snapshot.agenda} week={snapshot.week} funds={snapshot.funds}
                 onLeagues={adapter.listLeagues && (() => go('leagues'))}
+                shortlist={snapshot.shortlist} onCandidate={(player) => setDialog({ type: 'recruit', player })}
                 scouting={snapshot.scouting} busy={!!busy} onFacilities={() => go('settings')}
                 quoteScout={(criteria) => adapter.quoteScout?.(criteria)}
                 onDispatch={(criteria) => void run('action', () => adapter.dispatchScout(criteria))}
@@ -239,16 +241,19 @@ export default function App() {
         </Dialog>
       )}
       {dialog?.type === 'recruit' && (
-        <Dialog title={`${dialog.player.name} 계약 제안`} onClose={closeDialog}>
+        <Dialog title={dialog.player.name + ' · 스카우트 후보'} onClose={closeDialog}>
           <p className="term">{dialog.player.club} · {dialog.player.pos} · {dialog.player.age}세</p>
-          <dl className="terms">
+          {dialog.player.contract && <dl className="terms">
             <div><dt>계약 기간</dt><dd>{dialog.player.contract.years}년</dd></div>
             <div><dt>에이전시 수수료율</dt><dd>{dialog.player.contract.fee * 100}%</dd></div>
             {dialog.player.contract.cost != null && <div><dt>예상 계약 비용</dt><dd>{formatWon(dialog.player.contract.cost)}</dd></div>}
-          </dl>
+          </dl>}
           <div className="actions">
-            <button className="secondary" onClick={() => setDialog({ type: 'agenda', item })}>보고서로</button>
-            <button className="primary" disabled={!!busy} onClick={() => signCandidate(item, dialog.player)}>계약 제안 보내기</button>
+            {(item || shortlisted) && <button className="secondary" disabled={!!busy} onClick={() => void run('action', () => adapter.toggleScoutCandidate(item?.id, dialog.player.id))}>
+              {shortlisted ? '관심 후보에서 제외' : '관심 후보에 추가'}
+            </button>}
+            {item && <button className="secondary" onClick={() => setDialog({ type: 'agenda', item })}>보고서로</button>}
+            {dialog.player.contract && (item || shortlisted) && <button className="primary" disabled={!!busy} onClick={() => signCandidate(item, dialog.player)}>계약 제안 보내기</button>}
           </div>
         </Dialog>
       )}
