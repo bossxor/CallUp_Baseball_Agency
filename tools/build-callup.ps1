@@ -1,14 +1,22 @@
 ﻿param(
     [string]$SourceDir = (Join-Path $PSScriptRoot '..\apk-src'),
     [string]$OutputApk = (Join-Path $PSScriptRoot '..\CallUp-Prototype.apk'),
-    [int]$VersionCode = 170,
-    [string]$VersionName = '0.1.0-callup.55',
-    [switch]$SkipPatch
+    [int]$VersionCode = 183,
+    [string]$VersionName = '0.1.0-callup.68',
+    [switch]$SkipPatch,
+    [switch]$SkipShell
 )
 
 $ErrorActionPreference = 'Stop'
 $SourceDir = (Resolve-Path -LiteralPath $SourceDir).Path
 $OutputApk = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputApk)
+
+if (-not $SkipShell) {
+    powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'build-shell.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'build-shell failed' }
+    node (Join-Path $PSScriptRoot 'inject-shell.cjs')
+    if ($LASTEXITCODE -ne 0) { throw 'inject-shell failed' }
+}
 
 $sdkCandidates = @(
     'C:/Android/Sdk/build-tools/37.0.0',
